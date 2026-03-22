@@ -12,14 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const newTab       = localStorage.getItem('lumo-new-tab') !== 'false';
   const perPage      = localStorage.getItem('lumo-per-page') || '10';
 
-  const braveInput     = document.getElementById('braveKeyInput');
-  const anthropicInput = document.getElementById('anthropicKeyInput');
   const themeSelect    = document.getElementById('themeSelect');
   const aiToggle       = document.getElementById('aiSummaryToggle');
   const newTabToggle   = document.getElementById('newTabToggle');
   const perPageSel     = document.getElementById('resultsPerPage');
-  const saveBtn        = document.getElementById('saveKeysBtn');
-  const saveMsg        = document.getElementById('saveMsg');
 
   if (braveInput)     braveInput.value = braveKey;
   if (anthropicInput) anthropicInput.value = anthropicKey;
@@ -28,28 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (newTabToggle)   newTabToggle.checked = newTab;
   if (perPageSel)     perPageSel.value = perPage;
 
-  // Save keys
-  saveBtn?.addEventListener('click', () => {
-    const bk = braveInput?.value.trim() || '';
-    const ak = anthropicInput?.value.trim() || '';
-
-    localStorage.setItem('lumo-brave-key', bk);
-    localStorage.setItem('lumo-anthropic-key', ak);
-
-    // Inject into runtime config
-    if (typeof LUMO_CONFIG !== 'undefined') {
-      LUMO_CONFIG.BRAVE_API_KEY = bk || 'YOUR_BRAVE_API_KEY_HERE';
-      LUMO_CONFIG.ANTHROPIC_API_KEY = ak || 'YOUR_ANTHROPIC_API_KEY_HERE';
-    }
-
-    // Show saved message
-    if (saveMsg) {
-      saveMsg.textContent = '✓ Keys saved! They will be used on your next search.';
-      saveMsg.style.opacity = '1';
-      setTimeout(() => saveMsg.style.opacity = '0', 3000);
-    }
-  });
-
+  
   // Theme selector
   themeSelect?.addEventListener('change', () => {
     const val = themeSelect.value;
@@ -78,10 +53,3 @@ document.addEventListener('DOMContentLoaded', () => {
   perPageSel?.addEventListener('change', () => {
     localStorage.setItem('lumo-per-page', perPageSel.value);
   });
-
-  // Load saved API keys into runtime config on page load
-  if (typeof LUMO_CONFIG !== 'undefined') {
-    if (braveKey) LUMO_CONFIG.BRAVE_API_KEY = braveKey;
-    if (anthropicKey) LUMO_CONFIG.ANTHROPIC_API_KEY = anthropicKey;
-  }
-});
