@@ -1,1 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumo Search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
 
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+  </div>
+  <div class="noise"></div>
+
+  <div class="results-layout">
+
+    <!-- Top nav / search bar -->
+    <nav class="results-nav glass-subtle">
+      <a href="index.html" class="nav-logo">lumo</a>
+
+      <div class="results-search-wrap">
+        <input
+          type="text"
+          id="resultsSearchInput"
+          class="results-search-bar"
+          placeholder="Search…"
+          autocomplete="off"
+        />
+      </div>
+
+      <div style="display:flex;gap:0.5rem;margin-left:auto;align-items:center;">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <span class="theme-icon sun">☀️</span>
+          <span class="theme-icon moon">🌙</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Tabs -->
+    <div class="results-tabs glass-subtle">
+      <button class="results-tab active" data-tab="web">🌐 Web</button>
+      <button class="results-tab" data-tab="news">📰 News</button>
+    </div>
+
+    <!-- Web results -->
+    <div id="tabWeb" class="tab-panel">
+      <div class="results-body">
+        <div class="results-main">
+          <!-- AI Summary -->
+          <div class="ai-card" id="aiCard" style="display:none;">
+            <div class="ai-card-header">
+              <span class="ai-dot"></span>
+              Lumo AI Summary
+            </div>
+            <p id="aiSummaryText">Generating summary…</p>
+          </div>
+
+          <div class="results-stats" id="resultsStats"></div>
+          <div id="resultsList"></div>
+        </div>
+
+        <aside class="results-side" id="resultsSide" style="display:none;">
+          <!-- Side panel populated dynamically -->
+        </aside>
+      </div>
+    </div>
+
+    <!-- News results -->
+    <div id="tabNews" class="tab-panel" style="display:none;">
+      <div class="news-grid" id="newsGrid"></div>
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script src="search.js"></script>
+  <script src="ai.js"></script>
+  <script src="news.js"></script>
+</body>
+</html>
