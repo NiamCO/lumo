@@ -54,49 +54,42 @@ const MOCK_RESULTS = (query) => [
   },
 ];
 
-// --- Fetch from Brave Search API ---
+// --- Fetch from SerpApi ---
 async function fetchBraveResults(query, type = 'web') {
   const key = LUMO_CONFIG.BRAVE_API_KEY;
-  if (!key || key === 'YOUR_BRAVE_API_KEY_HERE') {
-    // Return mock data if no key
-    return { results: MOCK_RESULTS(query), isMock: true };
+  if (!key || key === 'YOUR_SERPAPI_KEY_HERE') {
+    return { results: type === 'news' ? [] : MOCK_RESULTS(query), isMock: true };
   }
 
   const endpoint = type === 'news'
-    ? `https://api.search.brave.com/res/v1/news/search?q=${encodeURIComponent(query)}&count=12`
-    : `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${LUMO_CONFIG.RESULTS_PER_PAGE}`;
+    ? `https://serpapi.com/search.json?engine=google_news&q=${encodeURIComponent(query)}&api_key=${key}`
+    : `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&num=${LUMO_CONFIG.RESULTS_PER_PAGE}&api_key=${key}`;
 
   try {
-    const res = await fetch(endpoint, {
-      headers: {
-        'Accept': 'application/json',
-        'Accept-Encoding': 'gzip',
-        'X-Subscription-Token': key,
-      }
-    });
+    const res = await fetch(endpoint);
     if (!res.ok) throw new Error(`API error ${res.status}`);
     const data = await res.json();
 
     if (type === 'news') {
-      return { results: (data.results || []).map(r => ({
+      return { results: (data.news_results || []).map(r => ({
         title: r.title,
-        url: r.url,
-        description: r.description || '',
-        source: r.meta_url?.hostname || new URL(r.url).hostname,
-        age: r.age || '',
-        favicon: `https://www.google.com/s2/favicons?domain=${new URL(r.url).hostname}&sz=32`,
+        url: r.link,
+        description: r.snippet || '',
+        source: r.source?.name || '',
+        age: r.date || '',
+        favicon: `https://www.google.com/s2/favicons?domain=${new URL(r.link).hostname}&sz=32`,
       })), isMock: false };
     }
 
-    return { results: (data.web?.results || []).map(r => ({
+    return { results: (data.organic_results || []).map(r => ({
       title: r.title,
-      url: r.url,
-      description: r.description || '',
-      favicon: `https://www.google.com/s2/favicons?domain=${new URL(r.url).hostname}&sz=32`,
+      url: r.link,
+      description: r.snippet || '',
+      favicon: `https://www.google.com/s2/favicons?domain=${new URL(r.link).hostname}&sz=32`,
     })), isMock: false };
 
   } catch (err) {
-    console.error('Brave API error:', err);
+    console.error('SerpApi error:', err);
     return { results: MOCK_RESULTS(query), isMock: true };
   }
 }
