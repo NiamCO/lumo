@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumo — Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="noise"></div>
+
+  <!-- Nav -->
+  <nav class="top-nav glass-subtle">
+    <div class="nav-left">
+      <a href="index.html" class="nav-brand" style="text-decoration:none">lumo</a>
+    </div>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle">
+        <span class="theme-icon sun">☀️</span>
+        <span class="theme-icon moon">🌙</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="settings-wrap">
+    <div class="settings-header">
+      <h1>Settings</h1>
+      <p>Customize your Lumo experience</p>
+    </div>
+
+    <!-- API Keys -->
+    <div class="settings-section">
+      <h2>🔑 API Keys</h2>
+
+      <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:0">
+        <div>
+          <div class="setting-label">Brave Search API Key</div>
+          <div class="setting-desc">Powers real web & news search results. Get one free at brave.com/search/api</div>
+        </div>
+        <input type="password" id="braveKeyInput" class="api-input" placeholder="BSA…" autocomplete="off" />
+      </div>
+
+      <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:0;margin-top:1rem">
+        <div>
+          <div class="setting-label">Anthropic API Key</div>
+          <div class="setting-desc">Powers AI summaries using Claude. Get one at console.anthropic.com</div>
+        </div>
+        <input type="password" id="anthropicKeyInput" class="api-input" placeholder="sk-ant-…" autocomplete="off" />
+      </div>
+
+      <button class="save-btn" id="saveKeysBtn">Save API Keys</button>
+      <div id="saveMsg" style="font-size:0.8rem;margin-top:0.5rem;color:var(--brand-1);opacity:0;transition:opacity 0.3s"></div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="settings-section">
+      <h2>🎨 Appearance</h2>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Theme</div>
+          <div class="setting-desc">Light, dark, or follow your system</div>
+        </div>
+        <select class="settings-select" id="themeSelect">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="settings-section">
+      <h2>🔍 Search</h2>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">AI Summaries</div>
+          <div class="setting-desc">Show an AI-generated answer at the top of results</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="aiSummaryToggle" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Open links in new tab</div>
+          <div class="setting-desc">Search result links open in a new browser tab</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="newTabToggle" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Results per page</div>
+        </div>
+        <select class="settings-select" id="resultsPerPage">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="settings-section">
+      <h2>ℹ️ About</h2>
+      <div class="setting-row">
+        <div class="setting-label">Version</div>
+        <span style="font-size:0.85rem;color:var(--text-muted)">Lumo v1.0.0</span>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Built with</div>
+        <span style="font-size:0.85rem;color:var(--text-muted)">HTML · CSS · Vanilla JS</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
