@@ -4,13 +4,12 @@
 // ============================================================
 
 const LUMO_CONFIG = {
-  // Brave Search API key — get one free at https://brave.com/search/api
-  BRAVE_API_KEY: "YOUR_BRAVE_API_KEY_HERE",
+  // SerpApi key — get one free at https://serpapi.com
+  BRAVE_API_KEY: "3ce835140c9f429cf8dbdfe24fb24327a0d488f84a714223e5be3c08be8fadb7",
 
-  // Anthropic API key — for AI summaries
-  ANTHROPIC_API_KEY: "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",
+  // Mistral API key — get one free at https://console.mistral.ai
+  MISTRAL_API_KEY: "NCw25EMGj2ga3WzGuudpclYhS4SMLA5a",
 
   // App settings defaults
   RESULTS_PER_PAGE: 10,
-  AI_SUMMARY_MODEL: "claude-sonnet-4-20250514",
 };
