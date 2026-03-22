@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lumo Search</title>
-  <link rel="icon" type="image/png" href="assets/favicon.png"/>
+    <link rel="icon" type="image/png" href="assets/favicon.png"/>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
@@ -12,71 +13,137 @@
 <body>
 
   <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
+    <div class="orb orb-1"></div><div class="orb orb-2"></div>
+    <div class="orb orb-3"></div><div class="orb orb-4"></div>
   </div>
   <div class="noise"></div>
 
   <div class="results-layout">
 
-    <!-- Top nav / search bar -->
+    <!-- Top nav -->
     <nav class="results-nav glass-subtle">
+      <a href="index.html" class="results-home-btn" title="Home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </a>
       <a href="index.html" class="nav-logo">lumo</a>
-
       <div class="results-search-wrap">
-        <input
-          type="text"
-          id="resultsSearchInput"
-          class="results-search-bar"
-          placeholder="Search…"
-          autocomplete="off"
-        />
+        <input type="text" id="resultsSearchInput" class="results-search-bar" placeholder="Search…" autocomplete="off"/>
       </div>
-
-      <div style="display:flex;gap:0.5rem;margin-left:auto;align-items:center;">
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-          <span class="theme-icon sun">☀️</span>
-          <span class="theme-icon moon">🌙</span>
+      <div style="display:flex;gap:0.4rem;align-items:center;margin-left:auto;">
+        <button class="bookmark-nav-btn" id="bookmarksBtn" title="Bookmarks">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+        <button class="apps-btn" id="appsBtn" title="Apps">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="3" width="4" height="4" rx="1"/><rect x="10" y="3" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/>
+            <rect x="3" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/>
+            <rect x="3" y="17" width="4" height="4" rx="1"/><rect x="10" y="17" width="4" height="4" rx="1"/><rect x="17" y="17" width="4" height="4" rx="1"/>
+          </svg>
+        </button>
+        <button class="theme-toggle" id="themeToggle">
+          <span class="theme-icon sun">☀️</span><span class="theme-icon moon">🌙</span>
         </button>
       </div>
     </nav>
 
-    <!-- Tabs -->
-    <div class="results-tabs glass-subtle">
+    <!-- Browser tab bar -->
+    <div class="browser-tabbar glass-subtle" id="browserTabbar">
+      <div class="browser-tabs" id="browserTabs"></div>
+    </div>
+
+    <!-- Search result tabs -->
+    <div class="results-tabs glass-subtle" id="resultsTabsBar">
       <button class="results-tab active" data-tab="web">🌐 Web</button>
       <button class="results-tab" data-tab="news">📰 News</button>
     </div>
 
-    <!-- Web results -->
+    <!-- Web results panel -->
     <div id="tabWeb" class="tab-panel">
       <div class="results-body">
         <div class="results-main">
-          <!-- AI Summary -->
           <div class="ai-card" id="aiCard" style="display:none;">
-            <div class="ai-card-header">
-              <span class="ai-dot"></span>
-              Lumo AI Summary
-            </div>
+            <div class="ai-card-header"><span class="ai-dot"></span>Lumo AI Summary</div>
             <p id="aiSummaryText">Generating summary…</p>
           </div>
-
           <div class="results-stats" id="resultsStats"></div>
           <div id="resultsList"></div>
         </div>
-
-        <aside class="results-side" id="resultsSide" style="display:none;">
-          <!-- Side panel populated dynamically -->
-        </aside>
+        <aside class="results-side" id="resultsSide" style="display:none;"></aside>
       </div>
     </div>
 
-    <!-- News results -->
+    <!-- News panel -->
     <div id="tabNews" class="tab-panel" style="display:none;">
       <div class="news-grid" id="newsGrid"></div>
     </div>
 
+    <!-- Iframe browser panel -->
+    <div id="browserPanel" class="browser-panel" style="display:none;">
+      <div class="browser-toolbar glass-subtle">
+        <button class="browser-nav-btn" id="iframeBack" title="Back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="browser-nav-btn" id="iframeRefresh" title="Refresh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+        <div class="browser-url-bar" id="browserUrlBar"></div>
+        <button class="browser-nav-btn" id="iframeBookmark" title="Bookmark this page">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+        <a id="iframeExternal" href="#" target="_blank" class="browser-nav-btn" title="Open in new tab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+      <div class="iframe-wrap">
+        <iframe id="mainIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Browser"></iframe>
+        <div class="iframe-blocked" id="iframeBlocked" style="display:none;">
+          <div class="iframe-blocked-inner glass">
+            <div style="font-size:2.5rem;margin-bottom:1rem">🚫</div>
+            <h3>This site can't be shown here</h3>
+            <p>This website blocks being embedded for security reasons — that's their choice, not a Lumo bug!</p>
+            <a id="iframeBlockedLink" href="#" target="_blank" class="save-btn" style="display:inline-block;margin-top:1rem;text-decoration:none;">Open in new tab instead</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bookmarks sidebar -->
+  <div class="bookmarks-overlay" id="bookmarksOverlay">
+    <div class="bookmarks-panel glass">
+      <div class="bookmarks-header">
+        <span>Bookmarks</span>
+        <button id="bookmarksClose" class="apps-close">✕</button>
+      </div>
+      <div id="bookmarksList" class="bookmarks-list"></div>
+    </div>
+  </div>
+
+  <!-- Apps modal -->
+  <div class="apps-overlay" id="appsOverlay">
+    <div class="apps-modal glass">
+      <div class="apps-modal-header">
+        <span>Lumo Apps</span>
+        <button class="apps-close" id="appsClose">✕</button>
+      </div>
+      <div class="apps-grid">
+        <a href="lumos-ai.html" class="app-item">
+          <div class="app-icon-wrap">🤖</div><span class="app-name">Lumos AI</span>
+        </a>
+        <div class="app-item app-soon"><div class="app-icon-wrap">🗺️</div><span class="app-name">Maps</span><span class="app-soon-tag">Soon</span></div>
+        <div class="app-item app-soon"><div class="app-icon-wrap">📧</div><span class="app-name">Mail</span><span class="app-soon-tag">Soon</span></div>
+        <div class="app-item app-soon"><div class="app-icon-wrap">📅</div><span class="app-name">Calendar</span><span class="app-soon-tag">Soon</span></div>
+        <div class="app-item app-soon"><div class="app-icon-wrap">📁</div><span class="app-name">Drive</span><span class="app-soon-tag">Soon</span></div>
+        <div class="app-item app-soon"><div class="app-icon-wrap">🖼️</div><span class="app-name">Photos</span><span class="app-soon-tag">Soon</span></div>
+      </div>
+    </div>
   </div>
 
   <script src="config.js"></script>
@@ -84,5 +151,6 @@
   <script src="search.js"></script>
   <script src="ai.js"></script>
   <script src="news.js"></script>
+  <script src="browser.js"></script>
 </body>
 </html>
