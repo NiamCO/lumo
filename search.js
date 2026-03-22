@@ -54,7 +54,7 @@ const MOCK_RESULTS = (query) => [
   },
 ];
 
-// --- Fetch from SerpApi ---
+// --- Fetch from Serper.dev ---
 async function fetchBraveResults(query, type = 'web') {
   const key = LUMO_CONFIG.BRAVE_API_KEY;
   if (!key || key === 'YOUR_SERPAPI_KEY_HERE') {
@@ -62,26 +62,36 @@ async function fetchBraveResults(query, type = 'web') {
   }
 
   const endpoint = type === 'news'
-    ? `https://serpapi.com/search.json?engine=google_news&q=${encodeURIComponent(query)}&api_key=${key}`
-    : `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&num=${LUMO_CONFIG.RESULTS_PER_PAGE}&api_key=${key}`;
+    ? 'https://google.serper.dev/news'
+    : 'https://google.serper.dev/search';
 
   try {
-    const res = await fetch(endpoint);
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': key,
+      },
+      body: JSON.stringify({
+        q: query,
+        num: LUMO_CONFIG.RESULTS_PER_PAGE,
+      })
+    });
     if (!res.ok) throw new Error(`API error ${res.status}`);
     const data = await res.json();
 
     if (type === 'news') {
-      return { results: (data.news_results || []).map(r => ({
+      return { results: (data.news || []).map(r => ({
         title: r.title,
         url: r.link,
         description: r.snippet || '',
-        source: r.source?.name || '',
+        source: r.source || '',
         age: r.date || '',
         favicon: `https://www.google.com/s2/favicons?domain=${new URL(r.link).hostname}&sz=32`,
       })), isMock: false };
     }
 
-    return { results: (data.organic_results || []).map(r => ({
+    return { results: (data.organic || []).map(r => ({
       title: r.title,
       url: r.link,
       description: r.snippet || '',
@@ -89,7 +99,7 @@ async function fetchBraveResults(query, type = 'web') {
     })), isMock: false };
 
   } catch (err) {
-    console.error('SerpApi error:', err);
+    console.error('Serper error:', err);
     return { results: MOCK_RESULTS(query), isMock: true };
   }
 }
