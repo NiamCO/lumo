@@ -1,6 +1,6 @@
 // ============================================================
 //  LUMO — ai.js
-//  Claude AI summary for search results
+//  Mistral AI summary for search results
 // ============================================================
 
 async function loadAISummary(query, topResults) {
@@ -8,11 +8,10 @@ async function loadAISummary(query, topResults) {
   const text = document.getElementById('aiSummaryText');
   if (!card || !text) return;
 
-  const key = LUMO_CONFIG.ANTHROPIC_API_KEY;
-  if (!key || key === 'YOUR_ANTHROPIC_API_KEY_HERE') {
-    // Show a friendly placeholder
+  const key = LUMO_CONFIG.MISTRAL_API_KEY;
+  if (!key || key === 'YOUR_MISTRAL_API_KEY_HERE') {
     card.style.display = 'block';
-    text.textContent = `Add your Anthropic API key in Settings to get AI-powered summaries for "${query}".`;
+    text.textContent = `Add your Mistral API key in config.js to get AI-powered summaries for "${query}".`;
     return;
   }
 
@@ -22,16 +21,14 @@ async function loadAISummary(query, topResults) {
   const context = topResults.map(r => `- ${r.title}: ${r.description}`).join('\n');
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        'Authorization': `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: LUMO_CONFIG.AI_SUMMARY_MODEL,
+        model: 'mistral-small-latest',
         max_tokens: 200,
         messages: [{
           role: 'user',
@@ -46,7 +43,7 @@ Provide only the summary, no preamble.`
     });
 
     const data = await res.json();
-    const summary = data.content?.[0]?.text || 'Could not generate a summary.';
+    const summary = data.choices?.[0]?.message?.content || 'Could not generate a summary.';
     text.textContent = summary;
   } catch (err) {
     console.error('AI summary error:', err);
