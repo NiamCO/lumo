@@ -113,14 +113,22 @@ async function handleRegister() {
   const errEl = document.getElementById('auth-error');
   errEl.textContent = '';
   if (!username || !password) { errEl.textContent = 'Please fill all required fields.'; return; }
+  if (username.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
   if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
-  if (!/^[a-z0-9_]+$/.test(username)) { errEl.textContent = 'Username: letters, numbers, underscores only.'; return; }
+  if (!/^[a-z0-9_]+$/.test(username)) { errEl.textContent = 'Username: only letters, numbers and underscores.'; return; }
+  // Check if username taken
+  const { data: taken } = await SB.from('profiles').select('id').eq('username', username).maybeSingle();
+  if (taken) { errEl.textContent = 'That username is already taken.'; return; }
   const email = username + '@lumo.chat';
-  const { error } = await SB.auth.signUp({ email, password });
+  const { data: signUpData, error } = await SB.auth.signUp({ email, password });
   if (error) { errEl.textContent = error.message; return; }
-  // Update display name if provided
-  if (displayName) {
-    await SB.from('profiles').update({ display_name: displayName }).eq('id', (await SB.auth.getUser()).data.user.id);
+  // Update display name after trigger creates profile (retry loop)
+  if (displayName && signUpData?.user?.id) {
+    for (let i = 0; i < 6; i++) {
+      await new Promise(r => setTimeout(r, 700));
+      const { error: upErr } = await SB.from('profiles').update({ display_name: displayName }).eq('id', signUpData.user.id);
+      if (!upErr) break;
+    }
   }
 }
 
@@ -755,19 +763,26 @@ async function startDm() {
   });
   if (existing) { closeModal('new-dm-modal'); openConversation(existing.id); return; }
 
-  // Create conversation
-  const { data: conv, error } = await SB.from('conversations').insert({ type: 'dm', created_by: currentUser.id }).select().single();
-  if (error) { document.getElementById('dm-error').textContent = 'Error creating conversation.'; return; }
+  // Create conversation — use service role workaround: insert then select via rpc
+  // Insert without .select() to avoid RLS blocking read before membership exists
+  const { error: convErr } = await SB.from('conversations').insert({ type: 'dm', created_by: currentUser.id });
+  if (convErr) { document.getElementById('dm-error').textContent = 'Error creating conversation: ' + convErr.message; return; }
 
-  // Add both members as accepted
+  // Get the conversation we just created (we can read it since created_by = us, or use a direct query)
+  const { data: convRow, error: fetchErr } = await SB.from('conversations')
+    .select('id').eq('created_by', currentUser.id).eq('type', 'dm')
+    .order('created_at', { ascending: false }).limit(1).single();
+  if (fetchErr || !convRow) { document.getElementById('dm-error').textContent = 'Error fetching conversation.'; return; }
+
+  // Add self as member FIRST so RLS read policy passes going forward
   await SB.from('conversation_members').insert([
-    { conversation_id: conv.id, user_id: currentUser.id, status: 'accepted', invited_by: currentUser.id },
-    { conversation_id: conv.id, user_id: selectedDmUser.id, status: 'pending', invited_by: currentUser.id }
+    { conversation_id: convRow.id, user_id: currentUser.id, status: 'accepted', invited_by: currentUser.id },
+    { conversation_id: convRow.id, user_id: selectedDmUser.id, status: 'pending', invited_by: currentUser.id }
   ]);
 
   closeModal('new-dm-modal');
   await loadConversations();
-  openConversation(conv.id);
+  openConversation(convRow.id);
 }
 
 // ============================================================
@@ -799,18 +814,23 @@ async function createGroup() {
   const name = document.getElementById('group-name-input').value.trim();
   if (!name) { document.getElementById('group-error').textContent = 'Group name required.'; return; }
 
-  const { data: conv, error } = await SB.from('conversations').insert({ type: 'group', name, created_by: currentUser.id }).select().single();
-  if (error) { document.getElementById('group-error').textContent = 'Error creating group.'; return; }
+  const { error: convErr } = await SB.from('conversations').insert({ type: 'group', name, created_by: currentUser.id });
+  if (convErr) { document.getElementById('group-error').textContent = 'Error creating group: ' + convErr.message; return; }
+
+  const { data: convRow, error: fetchErr } = await SB.from('conversations')
+    .select('id').eq('created_by', currentUser.id).eq('type', 'group').eq('name', name)
+    .order('created_at', { ascending: false }).limit(1).single();
+  if (fetchErr || !convRow) { document.getElementById('group-error').textContent = 'Error fetching group.'; return; }
 
   const members = [
-    { conversation_id: conv.id, user_id: currentUser.id, status: 'accepted', invited_by: currentUser.id },
-    ...selectedGroupUsers.map(u => ({ conversation_id: conv.id, user_id: u.id, status: 'pending', invited_by: currentUser.id }))
+    { conversation_id: convRow.id, user_id: currentUser.id, status: 'accepted', invited_by: currentUser.id },
+    ...selectedGroupUsers.map(u => ({ conversation_id: convRow.id, user_id: u.id, status: 'pending', invited_by: currentUser.id }))
   ];
   await SB.from('conversation_members').insert(members);
 
   closeModal('new-group-modal');
   await loadConversations();
-  openConversation(conv.id);
+  openConversation(convRow.id);
 }
 
 // ============================================================
