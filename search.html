@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lumo Search</title>
-    <link rel="icon" type="image/png" href="assets/favicon.png"/>
-
+  <link rel="icon" type="image/png" href="assets/favicon.png"/>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
@@ -55,13 +54,13 @@
       <div class="browser-tabs" id="browserTabs"></div>
     </div>
 
-    <!-- Search result tabs -->
+    <!-- Search result tabs (web / news) -->
     <div class="results-tabs glass-subtle" id="resultsTabsBar">
       <button class="results-tab active" data-tab="web">🌐 Web</button>
       <button class="results-tab" data-tab="news">📰 News</button>
     </div>
 
-    <!-- Web results panel -->
+    <!-- Web results -->
     <div id="tabWeb" class="tab-panel">
       <div class="results-body">
         <div class="results-main">
@@ -76,9 +75,30 @@
       </div>
     </div>
 
-    <!-- News panel -->
+    <!-- News -->
     <div id="tabNews" class="tab-panel" style="display:none;">
       <div class="news-grid" id="newsGrid"></div>
+    </div>
+
+    <!-- New Tab page -->
+    <div id="newTabPage" class="new-tab-page" style="display:none;">
+      <div class="new-tab-inner">
+        <div class="new-tab-logo">lumo</div>
+        <div class="new-tab-search-wrap">
+          <span class="search-icon" style="color:var(--text-muted)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <input type="text" id="newTabInput" class="new-tab-input" placeholder="Search or enter a URL…" autocomplete="off" spellcheck="false"/>
+        </div>
+        <div class="new-tab-chips">
+          <button class="chip" onclick="document.getElementById('newTabInput').value='weather today';document.getElementById('newTabInput').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))">🌤 Weather</button>
+          <button class="chip" onclick="document.getElementById('newTabInput').value='latest news';document.getElementById('newTabInput').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))">📰 News</button>
+          <button class="chip" onclick="document.getElementById('newTabInput').value='https://github.com';document.getElementById('newTabInput').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))">🐙 GitHub</button>
+          <button class="chip" onclick="document.getElementById('newTabInput').value='https://youtube.com';document.getElementById('newTabInput').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))">▶️ YouTube</button>
+        </div>
+      </div>
     </div>
 
     <!-- Iframe browser panel -->
@@ -87,11 +107,14 @@
         <button class="browser-nav-btn" id="iframeBack" title="Back">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
+        <button class="browser-nav-btn" id="iframeForward" title="Forward">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
         <button class="browser-nav-btn" id="iframeRefresh" title="Refresh">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         </button>
-        <div class="browser-url-bar" id="browserUrlBar"></div>
-        <button class="browser-nav-btn" id="iframeBookmark" title="Bookmark this page">
+        <input class="browser-url-bar" id="browserUrlBar" type="text" placeholder="Search or enter URL…" spellcheck="false" autocomplete="off"/>
+        <button class="browser-nav-btn" id="iframeBookmark" title="Bookmark">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
           </svg>
@@ -101,7 +124,7 @@
         </a>
       </div>
       <div class="iframe-wrap">
-        <iframe id="mainIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Browser"></iframe>
+        <iframe id="mainIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation" title="Browser"></iframe>
         <div class="iframe-blocked" id="iframeBlocked" style="display:none;">
           <div class="iframe-blocked-inner glass">
             <div style="font-size:2.5rem;margin-bottom:1rem">🚫</div>
@@ -134,9 +157,7 @@
         <button class="apps-close" id="appsClose">✕</button>
       </div>
       <div class="apps-grid">
-        <a href="lumos-ai.html" class="app-item">
-          <div class="app-icon-wrap">🤖</div><span class="app-name">Lumos AI</span>
-        </a>
+        <a href="lumos-ai.html" class="app-item"><div class="app-icon-wrap">🤖</div><span class="app-name">Lumos AI</span></a>
         <div class="app-item app-soon"><div class="app-icon-wrap">🗺️</div><span class="app-name">Maps</span><span class="app-soon-tag">Soon</span></div>
         <div class="app-item app-soon"><div class="app-icon-wrap">📧</div><span class="app-name">Mail</span><span class="app-soon-tag">Soon</span></div>
         <div class="app-item app-soon"><div class="app-icon-wrap">📅</div><span class="app-name">Calendar</span><span class="app-soon-tag">Soon</span></div>
