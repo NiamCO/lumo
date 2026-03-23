@@ -1,4 +1,3 @@
-
 /* ============================================================
    LUMO — Global Styles
    Glassmorphism · Liquid Glass · Blue/Purple · System Theme
@@ -913,4 +912,222 @@ main.hero {
 @media (max-width: 480px) {
   .quick-chips { gap: 0.35rem; }
   .chip { font-size: 0.75rem; padding: 0.4rem 0.8rem; }
+}
+
+/* ============================================================
+   APPS BUTTON & MODAL
+   ============================================================ */
+.apps-btn {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.apps-btn:hover { background: var(--glass-bg-hover); color: var(--text); transform: scale(1.06); }
+
+.apps-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; align-items: flex-start; justify-content: flex-end;
+  padding: 4rem 1rem 0;
+  pointer-events: none;
+}
+.apps-overlay.open { display: flex; pointer-events: auto; }
+
+.apps-modal {
+  border-radius: 24px;
+  padding: 1.25rem;
+  width: 280px;
+  animation: fadeDown 0.25s cubic-bezier(0.34,1.3,0.64,1) both;
+  pointer-events: auto;
+}
+.apps-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem;
+  font-size: 0.82rem; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em;
+}
+.apps-close {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 0.85rem; padding: 0.2rem 0.4rem;
+  border-radius: 6px; transition: background 0.15s, color 0.15s;
+}
+.apps-close:hover { background: var(--glass-bg-strong); color: var(--text); }
+
+.apps-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;
+}
+.app-item {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0.85rem 0.5rem; border-radius: 16px; cursor: pointer;
+  text-decoration: none; color: var(--text);
+  transition: background 0.2s, transform 0.15s;
+  position: relative;
+}
+.app-item:hover:not(.app-soon) { background: var(--glass-bg-hover); transform: translateY(-2px); }
+.app-item.app-soon { opacity: 0.5; cursor: default; }
+.app-icon-wrap { font-size: 1.75rem; margin-bottom: 0.4rem; }
+.app-name { font-size: 0.72rem; font-weight: 500; text-align: center; }
+.app-soon-tag {
+  position: absolute; top: 6px; right: 6px;
+  font-size: 0.6rem; background: var(--glass-border);
+  border-radius: 999px; padding: 0.1rem 0.4rem;
+  color: var(--text-muted); font-weight: 600;
+}
+
+/* ============================================================
+   HOME BUTTON IN RESULTS NAV
+   ============================================================ */
+.results-home-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+  color: var(--text-muted); text-decoration: none;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.results-home-btn:hover { background: var(--glass-bg-hover); color: var(--text); transform: scale(1.06); }
+
+/* ============================================================
+   BROWSER TAB BAR
+   ============================================================ */
+.browser-tabbar {
+  display: flex; align-items: center;
+  padding: 0.4rem 1rem; gap: 0.4rem;
+  overflow-x: auto; min-height: 44px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.browser-tabbar::-webkit-scrollbar { height: 3px; }
+.browser-tabbar::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 99px; }
+
+.browser-tabs { display: flex; gap: 0.35rem; flex: 1; }
+
+.browser-tab {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.35rem 0.75rem; border-radius: 10px;
+  font-size: 0.78rem; font-weight: 500; max-width: 180px;
+  cursor: pointer; white-space: nowrap; overflow: hidden;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  color: var(--text-muted); transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.browser-tab.active {
+  background: var(--glass-bg-strong); color: var(--text);
+  border-color: rgba(107,114,128,0.3);
+}
+.browser-tab:hover:not(.active) { background: var(--glass-bg-strong); color: var(--text); }
+.browser-tab-title { overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.browser-tab-close {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 0.7rem; padding: 0 0.1rem;
+  border-radius: 4px; line-height: 1; flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.browser-tab-close:hover { color: var(--text); background: var(--glass-border); }
+
+.browser-tab-results { /* The permanent "Results" tab */ }
+
+/* ============================================================
+   BROWSER PANEL (IFRAME)
+   ============================================================ */
+.browser-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+.browser-toolbar {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border-bottom: 1px solid var(--glass-border);
+}
+.browser-nav-btn {
+  background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+  border-radius: 8px; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-muted); flex-shrink: 0;
+  text-decoration: none; transition: background 0.15s, color 0.15s;
+}
+.browser-nav-btn:hover { background: var(--glass-bg-hover); color: var(--text); }
+
+.browser-url-bar {
+  flex: 1; background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 8px; padding: 0.35rem 0.75rem; font-size: 0.8rem;
+  color: var(--text-muted); overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.iframe-wrap { flex: 1; position: relative; }
+.iframe-wrap iframe {
+  width: 100%; height: 100%; border: none;
+  min-height: calc(100vh - 220px);
+}
+.iframe-blocked {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+.iframe-blocked-inner {
+  text-align: center; padding: 2.5rem; border-radius: 24px; max-width: 380px;
+}
+.iframe-blocked-inner h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.iframe-blocked-inner p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
+
+/* ============================================================
+   BOOKMARKS
+   ============================================================ */
+.bookmark-nav-btn {
+  background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+  border-radius: 10px; width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-muted);
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.bookmark-nav-btn:hover { background: var(--glass-bg-hover); color: var(--text); transform: scale(1.06); }
+.bookmark-nav-btn.bookmarked { color: var(--brand-1); }
+
+.bookmarks-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; align-items: flex-start; justify-content: flex-end;
+  padding: 4.5rem 0.5rem 0;
+  pointer-events: none;
+}
+.bookmarks-overlay.open { display: flex; pointer-events: auto; }
+
+.bookmarks-panel {
+  border-radius: 24px; width: 320px; max-height: 70vh;
+  display: flex; flex-direction: column;
+  animation: fadeDown 0.25s cubic-bezier(0.34,1.3,0.64,1) both;
+  overflow: hidden;
+}
+.bookmarks-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem 0.75rem;
+  font-size: 0.82rem; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em;
+  border-bottom: 1px solid var(--glass-border);
+}
+.bookmarks-list { flex: 1; overflow-y: auto; padding: 0.5rem; }
+.bookmarks-list::-webkit-scrollbar { width: 4px; }
+.bookmarks-list::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 99px; }
+
+.bookmark-item {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.65rem 0.75rem; border-radius: 12px;
+  cursor: pointer; transition: background 0.15s;
+  text-decoration: none; color: var(--text);
+}
+.bookmark-item:hover { background: var(--glass-bg-hover); }
+.bookmark-favicon { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
+.bookmark-info { flex: 1; min-width: 0; }
+.bookmark-title { font-size: 0.85rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bookmark-url { font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bookmark-remove {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 0.75rem; padding: 0.2rem;
+  border-radius: 6px; opacity: 0; transition: opacity 0.15s, color 0.15s;
+}
+.bookmark-item:hover .bookmark-remove { opacity: 1; }
+.bookmark-remove:hover { color: #ef4444; }
+
+.bookmarks-empty {
+  text-align: center; padding: 2rem 1rem;
+  color: var(--text-muted); font-size: 0.875rem;
 }
