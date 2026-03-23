@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumo Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font: 'Outfit', sans-serif;
+      --brand: #6b7280;
+      --brand-2: #9ca3af;
+      --admin-gold: #f59e0b;
+      --admin-gold-2: #fbbf24;
+      --glass-bg: rgba(255,255,255,0.08);
+      --glass-border: rgba(255,255,255,0.22);
+      --glass-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 0 rgba(255,255,255,0.18) inset;
+      --blur: blur(24px) saturate(160%);
+      --bg: #f5f5f4;
+      --surface: rgba(255,255,255,0.7);
+      --surface-hover: rgba(255,255,255,0.9);
+      --text: #1c1917;
+      --text-2: #57534e;
+      --text-3: #a8a29e;
+      --border: rgba(0,0,0,0.08);
+      --msg-out: rgba(107,114,128,0.18);
+      --msg-in: rgba(255,255,255,0.72);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+      --r: 14px;
+      --sidebar-w: 280px;
+    }
+    [data-theme="dark"] {
+      --glass-bg: rgba(255,255,255,0.05);
+      --glass-border: rgba(255,255,255,0.10);
+      --bg: #111110;
+      --surface: rgba(255,255,255,0.06);
+      --surface-hover: rgba(255,255,255,0.10);
+      --text: #e7e5e4;
+      --text-2: #a8a29e;
+      --text-3: #57534e;
+      --border: rgba(255,255,255,0.08);
+      --msg-out: rgba(107,114,128,0.28);
+      --msg-in: rgba(255,255,255,0.07);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    html { height: 100%; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      height: 100%;
+      overflow: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* BG Orbs */
+    .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(80px);
+      opacity: 0.18; animation: orbDrift 18s ease-in-out infinite;
+    }
+    [data-theme="dark"] .orb { opacity: 0.10; }
+    .orb-1 { width: 500px; height: 500px; background: #94a3b8; top: -15%; left: -10%; animation-delay: 0s; }
+    .orb-2 { width: 350px; height: 350px; background: #cbd5e1; bottom: -10%; right: -5%; animation-delay: -7s; }
+    .orb-3 { width: 250px; height: 250px; background: #e2e8f0; top: 50%; left: 45%; animation-delay: -13s; }
+    @keyframes orbDrift {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(30px,-20px) scale(1.05); }
+      66% { transform: translate(-20px,30px) scale(0.96); }
+    }
+
+    /* ======= AUTH SCREEN ======= */
+    #auth-screen {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .auth-card {
+      background: var(--surface);
+      backdrop-filter: var(--blur);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 40px 36px;
+      width: 100%; max-width: 380px;
+      box-shadow: var(--shadow-md);
+      position: relative; z-index: 1;
+    }
+    .auth-logo {
+      display: flex; align-items: center; gap: 10px;
+      justify-content: center; margin-bottom: 8px;
+    }
+    .auth-logo svg { width: 32px; height: 32px; }
+    .auth-logo span { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+    .auth-subtitle { text-align: center; color: var(--text-2); font-size: 0.85rem; margin-bottom: 28px; }
+    .auth-tabs { display: flex; gap: 4px; background: var(--glass-bg); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
+    .auth-tab {
+      flex: 1; padding: 8px; border: none; background: transparent;
+      border-radius: 7px; font-family: var(--font); font-size: 0.875rem;
+      font-weight: 500; color: var(--text-2); cursor: pointer; transition: all 0.2s;
+    }
+    .auth-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+    .auth-field { margin-bottom: 14px; }
+    .auth-field label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-2); margin-bottom: 6px; }
+    .auth-field input {
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--glass-bg);
+      font-family: var(--font); font-size: 0.9rem; color: var(--text);
+      outline: none; transition: border 0.2s;
+    }
+    .auth-field input:focus { border-color: var(--brand); }
+    .auth-btn {
+      width: 100%; padding: 12px; border-radius: 12px; border: none;
+      background: var(--text); color: var(--bg);
+      font-family: var(--font); font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s; margin-top: 4px;
+    }
+    .auth-btn:hover { opacity: 0.85; }
+    .auth-error { color: #ef4444; font-size: 0.82rem; margin-top: 10px; text-align: center; min-height: 18px; }
+
+    /* ======= APP LAYOUT ======= */
+    #app { display: none; height: 100vh; flex-direction: row; position: relative; z-index: 1; }
+    #app.visible { display: flex; }
+
+    /* ======= SIDEBAR ======= */
+    .sidebar {
+      width: var(--sidebar-w); min-width: var(--sidebar-w);
+      background: var(--surface); backdrop-filter: var(--blur);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; height: 100%;
+      transition: width 0.25s, min-width 0.25s;
+      position: relative; z-index: 10;
+    }
+    .sidebar-top {
+      padding: 14px 12px 10px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; flex: 1; }
+    .sidebar-logo svg { width: 26px; height: 26px; flex-shrink: 0; }
+    .sidebar-logo span { font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+    .icon-btn {
+      width: 34px; height: 34px; border-radius: 9px; border: none;
+      background: transparent; color: var(--text-2); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s; flex-shrink: 0;
+    }
+    .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+    .icon-btn svg { width: 18px; height: 18px; }
+
+    .sidebar-section { padding: 10px 10px 4px; }
+    .sidebar-section-label {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-3); padding: 0 4px; margin-bottom: 4px;
+    }
+    .new-chat-btn {
+      width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px dashed var(--border);
+      background: transparent; color: var(--text-2); font-family: var(--font);
+      font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: all 0.15s; margin-bottom: 4px;
+    }
+    .new-chat-btn:hover { background: var(--surface-hover); border-color: var(--brand); color: var(--text); }
+    .new-chat-btn svg { width: 15px; height: 15px; }
+
+    .conv-list { flex: 1; overflow-y: auto; padding: 4px 10px; }
+    .conv-list::-webkit-scrollbar { width: 4px; }
+    .conv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .conv-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 10px;
+      border-radius: 10px; cursor: pointer; transition: background 0.15s;
+      margin-bottom: 2px; position: relative;
+    }
+    .conv-item:hover { background: var(--surface-hover); }
+    .conv-item.active { background: var(--msg-out); }
+    .conv-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 600; overflow: hidden;
+      background: var(--glass-bg); border: 1px solid var(--border);
+    }
+    .conv-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .conv-info { flex: 1; min-width: 0; }
+    .conv-name { font-size: 0.875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-preview { font-size: 0.77rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+    .conv-badge {
+      min-width: 18px; height: 18px; border-radius: 9px; background: var(--text);
+      color: var(--bg); font-size: 0.7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; padding: 0 5px;
+    }
+
+    /* Invite notifications */
+    .invite-badge {
+      position: absolute; top: 6px; right: 8px;
+      min-width: 20px; height: 20px; border-radius: 10px;
+      background: #ef4444; color: white; font-size: 0.7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; padding: 0 5px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 6px rgba(239,68,68,0)} }
+
+    .sidebar-bottom {
+      padding: 10px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .user-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+    .user-avatar-sm {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      background: var(--glass-bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 600; overflow: hidden;
+    }
+    .user-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name-sm { font-size: 0.82rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ======= MAIN AREA ======= */
+    .main { flex: 1; display: flex; flex-direction: column; height: 100%; min-width: 0; }
+
+    /* Chat header */
+    .chat-header {
+      padding: 12px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); backdrop-filter: var(--blur);
+      flex-shrink: 0;
+    }
+    .chat-header-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--glass-bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 600; overflow: hidden; flex-shrink: 0;
+    }
+    .chat-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .chat-header-info { flex: 1; min-width: 0; }
+    .chat-header-name { font-size: 0.95rem; font-weight: 600; }
+    .chat-header-sub { font-size: 0.78rem; color: var(--text-3); margin-top: 1px; }
+    .header-actions { display: flex; gap: 4px; }
+
+    /* Messages area */
+    .messages-area {
+      flex: 1; overflow-y: auto; padding: 20px 18px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .messages-area::-webkit-scrollbar { width: 4px; }
+    .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Date divider */
+    .date-divider {
+      text-align: center; color: var(--text-3); font-size: 0.75rem;
+      margin: 10px 0; position: relative;
+    }
+    .date-divider::before {
+      content: ''; position: absolute; top: 50%; left: 0; right: 0;
+      height: 1px; background: var(--border);
+    }
+    .date-divider span { position: relative; background: var(--bg); padding: 0 10px; }
+
+    /* Message bubble */
+    .msg-row { display: flex; gap: 8px; margin-bottom: 2px; align-items: flex-end; }
+    .msg-row.out { flex-direction: row-reverse; }
+    .msg-row.grouped .msg-avatar { visibility: hidden; }
+
+    .msg-avatar {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: var(--glass-bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 600; overflow: hidden;
+    }
+    .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .msg-bubble {
+      max-width: 68%; padding: 9px 13px; border-radius: 18px;
+      font-size: 0.9rem; line-height: 1.5; position: relative;
+      word-break: break-word;
+    }
+    .msg-row.in .msg-bubble { background: var(--msg-in); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .msg-row.out .msg-bubble { background: var(--msg-out); border-bottom-right-radius: 4px; }
+
+    /* Admin gold messages */
+    .msg-row.admin-msg .msg-bubble {
+      background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,191,36,0.10));
+      border: 1px solid rgba(245,158,11,0.3);
+    }
+    .msg-row.admin-msg .msg-sender { color: var(--admin-gold) !important; }
+
+    /* Announcement */
+    .announcement-row {
+      background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.06));
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 14px; padding: 12px 16px; margin: 8px 0;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .announcement-row svg { color: var(--admin-gold); flex-shrink: 0; margin-top: 2px; }
+    .announcement-content { flex: 1; }
+    .announcement-label { font-size: 0.72rem; font-weight: 700; color: var(--admin-gold); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .announcement-text { font-size: 0.88rem; color: var(--text); line-height: 1.5; }
+
+    .msg-sender { font-size: 0.72rem; font-weight: 600; color: var(--text-2); margin-bottom: 3px; }
+    .msg-time { font-size: 0.68rem; color: var(--text-3); margin-top: 4px; }
+    .msg-row.out .msg-time { text-align: right; }
+
+    /* Reply preview inside bubble */
+    .msg-reply-preview {
+      background: var(--glass-bg); border-left: 2px solid var(--brand);
+      border-radius: 6px; padding: 4px 8px; margin-bottom: 6px;
+      font-size: 0.78rem; color: var(--text-2);
+    }
+    .msg-reply-preview strong { color: var(--text); display: block; font-size: 0.76rem; margin-bottom: 1px; }
+
+    /* Reactions */
+    .msg-reactions {
+      display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap;
+    }
+    .reaction-pill {
+      display: flex; align-items: center; gap: 4px; padding: 2px 8px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--glass-bg); font-size: 0.78rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .reaction-pill:hover { border-color: var(--brand); }
+    .reaction-pill.mine { border-color: var(--brand); background: var(--msg-out); }
+    .reaction-pill svg { width: 12px; height: 12px; }
+
+    /* Hover actions */
+    .msg-actions {
+      display: none; position: absolute; top: -28px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 3px; gap: 2px; box-shadow: var(--shadow-sm);
+    }
+    .msg-row.in .msg-actions { left: 0; display: none; flex-direction: row; }
+    .msg-row.out .msg-actions { right: 0; display: none; flex-direction: row; }
+    .msg-bubble-wrap { position: relative; }
+    .msg-bubble-wrap:hover .msg-actions { display: flex; }
+    .msg-action-btn {
+      width: 24px; height: 24px; border-radius: 5px; border: none;
+      background: transparent; color: var(--text-2); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .msg-action-btn:hover { background: var(--surface-hover); color: var(--text); }
+    .msg-action-btn svg { width: 13px; height: 13px; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      font-size: 0.78rem; color: var(--text-3); padding: 4px 0 8px;
+      min-height: 24px; transition: all 0.2s;
+    }
+    .typing-dots { display: inline-flex; gap: 3px; margin-left: 4px; }
+    .typing-dot {
+      width: 4px; height: 4px; border-radius: 50%; background: var(--text-3);
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes typingBounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-4px)} }
+
+    /* Input area */
+    .input-area {
+      padding: 12px 16px; border-top: 1px solid var(--border);
+      background: var(--surface); backdrop-filter: var(--blur);
+      flex-shrink: 0;
+    }
+    .reply-banner {
+      display: none; align-items: center; gap: 8px;
+      background: var(--glass-bg); border-radius: 8px; padding: 6px 10px; margin-bottom: 8px;
+      font-size: 0.8rem; color: var(--text-2);
+    }
+    .reply-banner.visible { display: flex; }
+    .reply-banner strong { color: var(--text); }
+    .reply-banner-close { margin-left: auto; cursor: pointer; color: var(--text-3); }
+    .input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .input-wrap {
+      flex: 1; display: flex; align-items: flex-end; gap: 6px;
+      background: var(--glass-bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 8px 12px; transition: border 0.2s;
+    }
+    .input-wrap:focus-within { border-color: var(--brand); }
+    #msg-input {
+      flex: 1; border: none; background: transparent; font-family: var(--font);
+      font-size: 0.9rem; color: var(--text); outline: none; resize: none;
+      max-height: 120px; line-height: 1.4;
+    }
+    #msg-input::placeholder { color: var(--text-3); }
+    .send-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: none;
+      background: var(--text); color: var(--bg); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.2s; flex-shrink: 0;
+    }
+    .send-btn:hover { opacity: 0.8; }
+    .send-btn svg { width: 16px; height: 16px; }
+
+    /* ======= EMPTY / WELCOME STATES ======= */
+    .empty-state {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px;
+      color: var(--text-3); text-align: center; padding: 40px;
+    }
+    .empty-state svg { width: 48px; height: 48px; opacity: 0.4; }
+    .empty-state h3 { font-size: 1.1rem; font-weight: 600; color: var(--text-2); }
+    .empty-state p { font-size: 0.85rem; max-width: 280px; line-height: 1.5; }
+
+    /* ======= MODALS ======= */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px); z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); backdrop-filter: var(--blur);
+      border: 1px solid var(--glass-border); border-radius: 20px;
+      padding: 28px; width: 100%; max-width: 420px;
+      box-shadow: var(--shadow-md); max-height: 80vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; }
+    .modal-field { margin-bottom: 12px; }
+    .modal-field label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-2); margin-bottom: 5px; }
+    .modal-field input, .modal-field textarea {
+      width: 100%; padding: 9px 12px; border-radius: 9px;
+      border: 1px solid var(--border); background: var(--glass-bg);
+      font-family: var(--font); font-size: 0.88rem; color: var(--text);
+      outline: none; transition: border 0.2s;
+    }
+    .modal-field input:focus, .modal-field textarea:focus { border-color: var(--brand); }
+    .modal-field textarea { resize: vertical; min-height: 70px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-btn {
+      flex: 1; padding: 10px; border-radius: 10px; border: none;
+      font-family: var(--font); font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .modal-btn.primary { background: var(--text); color: var(--bg); }
+    .modal-btn.secondary { background: var(--glass-bg); color: var(--text-2); border: 1px solid var(--border); }
+    .modal-btn:hover { opacity: 0.8; }
+    .modal-error { color: #ef4444; font-size: 0.8rem; margin-top: 8px; }
+
+    /* User search results */
+    .user-search-results { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .user-result {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      border-radius: 9px; cursor: pointer; transition: background 0.15s;
+      border: 1px solid transparent;
+    }
+    .user-result:hover { background: var(--surface-hover); border-color: var(--border); }
+    .user-result.selected { background: var(--msg-out); border-color: var(--brand); }
+    .user-result-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--glass-bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 600;
+    }
+    .user-result-name { font-size: 0.87rem; font-weight: 500; }
+
+    /* Pending invites panel */
+    .invite-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      background: var(--glass-bg); border-radius: 10px; margin-bottom: 8px;
+    }
+    .invite-info { flex: 1; min-width: 0; }
+    .invite-name { font-size: 0.88rem; font-weight: 600; }
+    .invite-from { font-size: 0.78rem; color: var(--text-2); margin-top: 2px; }
+    .invite-actions { display: flex; gap: 6px; }
+    .invite-btn {
+      padding: 5px 12px; border-radius: 8px; border: none;
+      font-family: var(--font); font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .invite-btn.accept { background: #22c55e; color: white; }
+    .invite-btn.reject { background: var(--glass-bg); color: var(--text-2); border: 1px solid var(--border); }
+    .invite-btn:hover { opacity: 0.8; }
+
+    /* Profile modal */
+    .avatar-picker {
+      display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 16px;
+    }
+    .avatar-large {
+      width: 72px; height: 72px; border-radius: 50%; overflow: hidden;
+      background: var(--glass-bg); border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 700; cursor: pointer; position: relative;
+    }
+    .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-large-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s; border-radius: 50%;
+    }
+    .avatar-large:hover .avatar-large-overlay { opacity: 1; }
+    #avatar-file-input { display: none; }
+
+    /* Admin panel */
+    .admin-badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+      border-radius: 6px; background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.15));
+      border: 1px solid rgba(245,158,11,0.3); color: var(--admin-gold);
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      :root { --sidebar-w: 100%; }
+      .sidebar { position: absolute; left: -100%; transition: left 0.25s; z-index: 50; }
+      .sidebar.open { left: 0; }
+      .main { width: 100%; }
+    }
+
+    /* Theme-aware scrollbar */
+    * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+    /* Subtle entrance animation */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .msg-row { animation: fadeUp 0.18s ease; }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <!-- Lumo logo mini -->
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.3">
+            <animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="12s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="20" cy="20" r="11" stroke="currentColor" stroke-width="1.8" opacity="0.6">
+            <animateTransform attributeName="transform" type="rotate" from="0 20 20" to="-360 20 20" dur="8s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="20" cy="20" r="4" fill="currentColor" opacity="0.85"/>
+          <circle cx="20" cy="9" r="2" fill="currentColor" opacity="0.5"/>
+          <circle cx="31" cy="20" r="1.5" fill="currentColor" opacity="0.4"/>
+          <circle cx="9" cy="20" r="1.5" fill="currentColor" opacity="0.4"/>
+        </svg>
+        <span>Lumo Chat</span>
+      </div>
+      <p class="auth-subtitle" style="font-style:italic;font-family:'Playfair Display',serif;">connect with anyone</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+      </div>
+      <div id="login-form">
+        <div class="auth-field">
+          <label>Username</label>
+          <input type="text" id="login-username" placeholder="your username" autocomplete="username"/>
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
+        </div>
+        <button class="auth-btn" onclick="handleLogin()">Sign In</button>
+      </div>
+      <div id="register-form" style="display:none">
+        <div class="auth-field">
+          <label>Username</label>
+          <input type="text" id="reg-username" placeholder="choose a username" autocomplete="username"/>
+        </div>
+        <div class="auth-field">
+          <label>Display Name <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
+          <input type="text" id="reg-displayname" placeholder="how others see you"/>
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="reg-password" placeholder="min 6 characters" autocomplete="new-password"/>
+        </div>
+        <button class="auth-btn" onclick="handleRegister()">Create Account</button>
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <a href="index.html" class="sidebar-logo">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.3">
+              <animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="12s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="20" cy="20" r="11" stroke="currentColor" stroke-width="1.8" opacity="0.6"/>
+            <circle cx="20" cy="20" r="4" fill="currentColor" opacity="0.85"/>
+            <circle cx="20" cy="9" r="2" fill="currentColor" opacity="0.5"/>
+          </svg>
+          <span>Chat</span>
+        </a>
+        <!-- Invite notifications button -->
+        <button class="icon-btn" onclick="openInvitesModal()" id="invites-btn" title="Pending invites">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </button>
+        <button class="icon-btn" onclick="openThemeToggle()" title="Toggle theme">
+          <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Messages</div>
+        <button class="new-chat-btn" onclick="openNewDmModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          New Direct Message
+        </button>
+        <button class="new-chat-btn" onclick="openNewGroupModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          New Group Chat
+        </button>
+      </div>
+
+      <div class="conv-list" id="conv-list">
+        <!-- Conversations populated here -->
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="user-info">
+          <div class="user-avatar-sm" id="sidebar-user-avatar"></div>
+          <span class="user-name-sm" id="sidebar-user-name"></span>
+        </div>
+        <button class="icon-btn" onclick="openProfileModal()" title="Profile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
+        <button class="icon-btn" onclick="handleSignOut()" title="Sign out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main" id="main-content">
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <h3>Select a conversation</h3>
+        <p>Choose an existing chat or start a new direct message or group chat.</p>
+      </div>
+
+      <!-- Chat view (hidden until conversation selected) -->
+      <div id="chat-view" style="display:none; flex-direction:column; height:100%">
+        <div class="chat-header">
+          <div class="chat-header-avatar" id="ch-avatar"></div>
+          <div class="chat-header-info">
+            <div class="chat-header-name" id="ch-name"></div>
+            <div class="chat-header-sub" id="ch-sub"></div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn" id="announce-btn" title="Send Announcement" style="display:none" onclick="openAnnounceModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+              </svg>
+            </button>
+            <button class="icon-btn" onclick="openGroupInfoModal()" id="group-info-btn" style="display:none" title="Group info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="messages-area" id="messages-area"></div>
+
+        <div style="padding: 0 18px;">
+          <div class="typing-indicator" id="typing-indicator"></div>
+        </div>
+
+        <div class="input-area">
+          <div class="reply-banner" id="reply-banner">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+            Replying to <strong id="reply-to-name"></strong>: <span id="reply-preview-text"></span>
+            <span class="reply-banner-close" onclick="clearReply()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </span>
+          </div>
+          <div class="input-row">
+            <div class="input-wrap">
+              <textarea id="msg-input" rows="1" placeholder="Type a message…" onkeydown="handleMsgKeydown(event)" oninput="handleTyping()"></textarea>
+            </div>
+            <button class="send-btn" onclick="sendMessage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODALS ===== -->
+
+  <!-- New DM Modal -->
+  <div class="modal-overlay" id="new-dm-modal">
+    <div class="modal">
+      <div class="modal-title">New Direct Message</div>
+      <div class="modal-field">
+        <label>Search by username</label>
+        <input type="text" id="dm-user-search" placeholder="Type a username…" oninput="searchUsers('dm')"/>
+      </div>
+      <div class="user-search-results" id="dm-search-results"></div>
+      <div class="modal-error" id="dm-error"></div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('new-dm-modal')">Cancel</button>
+        <button class="modal-btn primary" onclick="startDm()">Start Chat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Group Modal -->
+  <div class="modal-overlay" id="new-group-modal">
+    <div class="modal">
+      <div class="modal-title">New Group Chat</div>
+      <div class="modal-field">
+        <label>Group Name</label>
+        <input type="text" id="group-name-input" placeholder="e.g. Team Alpha"/>
+      </div>
+      <div class="modal-field">
+        <label>Add Members (search username)</label>
+        <input type="text" id="group-user-search" placeholder="Search users…" oninput="searchUsers('group')"/>
+      </div>
+      <div class="user-search-results" id="group-search-results"></div>
+      <div id="selected-members" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:24px"></div>
+      <div class="modal-error" id="group-error"></div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('new-group-modal')">Cancel</button>
+        <button class="modal-btn primary" onclick="createGroup()">Create Group</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Invites Modal -->
+  <div class="modal-overlay" id="invites-modal">
+    <div class="modal">
+      <div class="modal-title">Pending Invites</div>
+      <div id="invites-list"><p style="color:var(--text-3);font-size:0.85rem">No pending invites.</p></div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('invites-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal-overlay" id="profile-modal">
+    <div class="modal">
+      <div class="modal-title">Profile</div>
+      <div class="avatar-picker">
+        <div class="avatar-large" onclick="document.getElementById('avatar-file-input').click()">
+          <div id="profile-avatar-display"></div>
+          <div class="avatar-large-overlay">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+        </div>
+        <input type="file" id="avatar-file-input" accept="image/*" onchange="handleAvatarUpload(event)"/>
+        <span style="font-size:0.78rem;color:var(--text-3)">Click to change avatar</span>
+      </div>
+      <div class="modal-field">
+        <label>Display Name</label>
+        <input type="text" id="profile-displayname" placeholder="Your display name"/>
+      </div>
+      <div style="color:var(--text-3);font-size:0.8rem;margin-top:4px" id="profile-admin-label"></div>
+      <div class="modal-error" id="profile-error"></div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('profile-modal')">Cancel</button>
+        <button class="modal-btn primary" onclick="saveProfile()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Announce Modal (admin only) -->
+  <div class="modal-overlay" id="announce-modal">
+    <div class="modal">
+      <div class="modal-title">📣 Send Announcement</div>
+      <p style="font-size:0.82rem;color:var(--text-2);margin-bottom:14px">This will be broadcast to all users.</p>
+      <div class="modal-field">
+        <label>Announcement</label>
+        <textarea id="announce-text" placeholder="Type your announcement…" rows="4"></textarea>
+      </div>
+      <div class="modal-error" id="announce-error"></div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('announce-modal')">Cancel</button>
+        <button class="modal-btn primary" onclick="sendAnnouncement()">Broadcast</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group Info Modal -->
+  <div class="modal-overlay" id="group-info-modal">
+    <div class="modal">
+      <div class="modal-title" id="gi-title">Group Info</div>
+      <div id="gi-members" style="margin-bottom:16px"></div>
+      <div id="gi-invite-section">
+        <div class="modal-field">
+          <label>Invite member</label>
+          <input type="text" id="gi-user-search" placeholder="Search username…" oninput="searchUsers('gi')"/>
+        </div>
+        <div class="user-search-results" id="gi-search-results"></div>
+        <button class="modal-btn primary" style="margin-top:8px;width:100%" onclick="inviteToGroup()">Send Invite</button>
+      </div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="modal-btn secondary" onclick="closeModal('group-info-modal')">Close</button>
+        <button class="modal-btn secondary" id="leave-group-btn" onclick="leaveGroup()" style="color:#ef4444">Leave Group</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="lumo-chat.js"></script>
+</body>
+</html>
