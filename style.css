@@ -1338,3 +1338,96 @@ main.hero {
   text-align: center; padding: 2rem 1rem;
   color: var(--text-muted); font-size: 0.82rem; line-height: 1.6;
 }
+
+/* ============================================================
+   BROWSER — URL BAR (editable input)
+   ============================================================ */
+.browser-url-bar {
+  flex: 1;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font-main);
+  font-size: 0.82rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 0;
+}
+.browser-url-bar:focus {
+  border-color: rgba(107,114,128,0.4);
+  box-shadow: 0 0 0 3px rgba(107,114,128,0.08);
+  background: var(--glass-bg-strong);
+}
+.browser-url-bar::selection { background: rgba(107,114,128,0.25); }
+
+/* New tab button in tab bar */
+.new-tab-btn {
+  background: none; border: none;
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-muted); flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  margin-left: 0.25rem;
+  align-self: center;
+}
+.new-tab-btn:hover { background: var(--glass-bg-strong); color: var(--text); }
+
+/* ============================================================
+   NEW TAB PAGE
+   ============================================================ */
+.new-tab-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeUp 0.3s ease both;
+}
+.new-tab-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 560px;
+}
+.new-tab-logo {
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  letter-spacing: -0.06em;
+  background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 12px var(--brand-glow));
+}
+.new-tab-search-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: 999px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: var(--glass-shadow);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.new-tab-search-wrap:focus-within {
+  border-color: rgba(107,114,128,0.4);
+  box-shadow: var(--glass-shadow), 0 0 0 3px rgba(107,114,128,0.08);
+}
+.new-tab-input {
+  flex: 1; background: none; border: none; outline: none;
+  font-family: var(--font-main); font-size: 1rem;
+  color: var(--text); caret-color: var(--brand-1);
+}
+.new-tab-input::placeholder { color: var(--text-muted); }
+.new-tab-chips {
+  display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;
+}
