@@ -12,4 +12,8 @@ const LUMO_CONFIG = {
 
   // App settings defaults
   RESULTS_PER_PAGE: 10,
+
+  SUPABASE_URL: "https://urcwukegybnaeirdvhhy.supabase.co",
+
+SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyY3d1a2VneWJuYWVpcmR2aGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMzE2NDcsImV4cCI6MjA4OTgwNzY0N30.3zseU5_c_2pbXrFULj_yA81wP8KEWgzNYJjjgZwMy0M",
 };
