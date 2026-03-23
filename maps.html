@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lumo Maps</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { font-family: var(--font-main); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+    /* ---- Layout ---- */
+    .maps-app { position: relative; width: 100vw; height: 100vh; }
+
+    /* ---- Map ---- */
+    #map { width: 100%; height: 100%; z-index: 1; }
+    .leaflet-control-zoom { display: none; } /* we use custom zoom */
+
+    /* ---- Top bar ---- */
+    .maps-topbar {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: var(--glass-bg-strong);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .maps-home-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+      color: var(--text-muted); text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .maps-home-btn:hover { background: var(--glass-bg-hover); color: var(--text); }
+    .maps-logo {
+      font-family: var(--font-main); font-weight: 700; font-size: 1.1rem;
+      letter-spacing: -0.04em; text-decoration: none;
+      background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      flex-shrink: 0;
+    }
+    .maps-logo span { font-weight: 400; opacity: 0.7; }
+
+    /* ---- Search bar ---- */
+    .maps-search-wrap {
+      flex: 1; max-width: 480px; position: relative;
+    }
+    .maps-search-glass {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      border-radius: 999px; padding: 0.6rem 1rem;
+      box-shadow: var(--glass-shadow);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .maps-search-glass:focus-within {
+      border-color: rgba(107,114,128,0.45);
+      box-shadow: var(--glass-shadow), 0 0 0 3px rgba(107,114,128,0.1);
+    }
+    .maps-search-input {
+      flex: 1; background: none; border: none; outline: none;
+      font-family: var(--font-main); font-size: 0.9rem; color: var(--text);
+      caret-color: var(--brand-1);
+    }
+    .maps-search-input::placeholder { color: var(--text-muted); }
+    .maps-search-clear {
+      background: none; border: none; color: var(--text-muted); cursor: pointer;
+      font-size: 0.75rem; padding: 0.1rem 0.3rem; border-radius: 50%;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .maps-search-clear.visible { opacity: 1; pointer-events: auto; }
+
+    /* Search suggestions */
+    .maps-suggestions {
+      position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+      background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      border-radius: 18px; overflow: hidden; box-shadow: var(--glass-shadow);
+      z-index: 200; display: none;
+    }
+    .maps-suggestions.open { display: block; }
+    .maps-suggestion-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.75rem 1rem; cursor: pointer;
+      transition: background 0.15s; border-bottom: 1px solid var(--glass-border);
+    }
+    .maps-suggestion-item:last-child { border-bottom: none; }
+    .maps-suggestion-item:hover { background: var(--glass-bg-hover); }
+    .maps-suggestion-icon { font-size: 1rem; flex-shrink: 0; }
+    .maps-suggestion-name { font-size: 0.875rem; font-weight: 500; }
+    .maps-suggestion-addr { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+    /* ---- Sidebar panel ---- */
+    .maps-sidebar {
+      position: absolute; top: 70px; left: 0; bottom: 0; z-index: 50;
+      width: 340px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      border-right: 1px solid var(--glass-border);
+      display: flex; flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.34,1.1,0.64,1);
+      overflow: hidden;
+    }
+    .maps-sidebar.open { transform: translateX(0); }
+
+    .sidebar-header {
+      padding: 1.1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;
+    }
+    .sidebar-place-name { font-size: 1.15rem; font-weight: 700; line-height: 1.2; }
+    .sidebar-place-addr { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.4; }
+    .sidebar-close {
+      background: none; border: none; color: var(--text-muted); cursor: pointer;
+      width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s, color 0.15s; font-size: 0.85rem;
+    }
+    .sidebar-close:hover { background: var(--glass-bg-hover); color: var(--text); }
+
+    .sidebar-actions {
+      display: flex; gap: 0.6rem; padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .sidebar-action-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+      padding: 0.65rem 0.5rem; border-radius: 14px; cursor: pointer;
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      font-family: var(--font-main); font-size: 0.72rem; font-weight: 600;
+      color: var(--text-muted); transition: background 0.2s, color 0.2s, transform 0.15s;
+    }
+    .sidebar-action-btn:hover { background: var(--glass-bg-hover); color: var(--text); transform: translateY(-1px); }
+    .sidebar-action-btn svg { flex-shrink: 0; }
+
+    .sidebar-coords {
+      padding: 0.85rem 1.25rem; font-size: 0.78rem; color: var(--text-muted);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .sidebar-coords span { color: var(--text); font-weight: 500; }
+
+    /* Directions panel */
+    .directions-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .directions-panel.open { display: flex; }
+    .directions-inputs { padding: 0.85rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; border-bottom: 1px solid var(--glass-border); }
+    .directions-input-wrap { display: flex; align-items: center; gap: 0.6rem; }
+    .directions-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .directions-dot.origin { background: #22c55e; }
+    .directions-dot.dest { background: #ef4444; }
+    .directions-input {
+      flex: 1; background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: 10px; padding: 0.5rem 0.75rem;
+      font-family: var(--font-main); font-size: 0.85rem; color: var(--text); outline: none;
+      transition: border-color 0.2s;
+    }
+    .directions-input:focus { border-color: rgba(107,114,128,0.4); }
+    .directions-input::placeholder { color: var(--text-muted); }
+    .directions-go-btn {
+      background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+      border: none; border-radius: 10px; padding: 0.55rem 1.1rem;
+      font-family: var(--font-main); font-size: 0.85rem; font-weight: 600;
+      color: white; cursor: pointer; margin: 0 1.25rem 0.85rem;
+      box-shadow: 0 2px 10px var(--brand-glow);
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .directions-go-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px var(--brand-glow); }
+
+    .directions-result { padding: 0.85rem 1.25rem; font-size: 0.875rem; }
+    .directions-summary {
+      display: flex; gap: 1rem; margin-bottom: 0.85rem;
+      padding: 0.75rem; border-radius: 12px;
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+    }
+    .directions-summary-item { text-align: center; flex: 1; }
+    .directions-summary-val { font-size: 1.1rem; font-weight: 700; }
+    .directions-summary-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem; }
+    .directions-steps { display: flex; flex-direction: column; gap: 0.4rem; overflow-y: auto; flex: 1; padding: 0 1.25rem 1rem; }
+    .directions-step {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.6rem 0.75rem; border-radius: 10px;
+      font-size: 0.8rem; line-height: 1.4; color: var(--text);
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+    }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--brand-1);
+      color: white; font-size: 0.65rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    /* Search results list in sidebar */
+    .sidebar-results { flex: 1; overflow-y: auto; }
+    .sidebar-results::-webkit-scrollbar { width: 3px; }
+    .sidebar-results::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 99px; }
+    .sidebar-result-item {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.85rem 1.25rem; cursor: pointer; border-bottom: 1px solid var(--glass-border);
+      transition: background 0.15s;
+    }
+    .sidebar-result-item:hover { background: var(--glass-bg-hover); }
+    .sidebar-result-item.active { background: var(--glass-bg-hover); }
+    .sidebar-result-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    }
+    .sidebar-result-name { font-size: 0.875rem; font-weight: 600; line-height: 1.2; }
+    .sidebar-result-addr { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.3; }
+
+    /* ---- Custom map controls ---- */
+    .map-controls {
+      position: absolute; right: 1rem; bottom: 5rem; z-index: 50;
+      display: flex; flex-direction: column; gap: 0.4rem;
+    }
+    .map-ctrl-btn {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      box-shadow: var(--glass-shadow);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-muted); font-size: 1rem;
+      transition: background 0.2s, color 0.2s, transform 0.15s;
+    }
+    .map-ctrl-btn:hover { background: var(--glass-bg-hover); color: var(--text); transform: scale(1.06); }
+    .map-ctrl-btn svg { pointer-events: none; }
+
+    /* ---- Map style toggle ---- */
+    .map-style-toggle {
+      position: absolute; right: 1rem; top: 85px; z-index: 50;
+      display: flex; gap: 0.4rem;
+    }
+    .map-style-btn {
+      padding: 0.4rem 0.85rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+      background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      cursor: pointer; color: var(--text-muted); font-family: var(--font-main);
+      transition: background 0.2s, color 0.2s;
+    }
+    .map-style-btn.active { background: var(--glass-bg-hover); color: var(--text); border-color: rgba(107,114,128,0.4); }
+
+    /* ---- Info popup ---- */
+    .leaflet-popup-content-wrapper {
+      background: var(--glass-bg-strong) !important;
+      backdrop-filter: var(--glass-blur) !important;
+      border: 1px solid var(--glass-border) !important;
+      border-radius: 16px !important;
+      box-shadow: var(--glass-shadow) !important;
+      color: var(--text) !important;
+      font-family: var(--font-main) !important;
+    }
+    .leaflet-popup-tip { background: var(--glass-bg-strong) !important; }
+    .leaflet-popup-content { margin: 0.75rem 1rem !important; font-size: 0.875rem !important; }
+    .popup-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.25rem; }
+    .popup-addr { color: var(--text-muted); font-size: 0.78rem; line-height: 1.4; }
+
+    /* ---- Loading indicator ---- */
+    .maps-loading {
+      position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+      z-index: 200; background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+      backdrop-filter: var(--glass-blur); border-radius: 999px;
+      padding: 0.5rem 1.25rem; font-size: 0.82rem; color: var(--text-muted);
+      display: none; align-items: center; gap: 0.5rem;
+      box-shadow: var(--glass-shadow);
+    }
+    .maps-loading.visible { display: flex; animation: fadeDown 0.2s ease both; }
+    .loading-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--brand-1);
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* ---- Theme toggle position ---- */
+    .maps-theme-btn {
+      background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+      border-radius: 10px; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; position: relative; overflow: hidden;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .maps-theme-btn:hover { transform: scale(1.06); }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      .maps-sidebar { width: 100vw; top: auto; bottom: 0; height: 60vh; transform: translateY(100%); border-right: none; border-top: 1px solid var(--glass-border); }
+      .maps-sidebar.open { transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<div class="maps-app">
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Top bar -->
+  <div class="maps-topbar">
+    <a href="index.html" class="maps-home-btn" title="Home">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </a>
+    <a href="index.html" class="maps-logo">lumo <span>maps</span></a>
+
+    <div class="maps-search-wrap">
+      <div class="maps-search-glass">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);flex-shrink:0">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="mapsSearchInput" class="maps-search-input" placeholder="Search Google Maps" autocomplete="off" spellcheck="false"/>
+        <button class="maps-search-clear" id="mapsSearchClear">✕</button>
+      </div>
+      <div class="maps-suggestions" id="mapsSuggestions"></div>
+    </div>
+
+    <button class="maps-theme-btn theme-toggle" id="themeToggle">
+      <span class="theme-icon sun">☀️</span>
+      <span class="theme-icon moon">🌙</span>
+    </button>
+  </div>
+
+  <!-- Loading indicator -->
+  <div class="maps-loading" id="mapsLoading">
+    <div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>
+    <span id="mapsLoadingText">Searching…</span>
+  </div>
+
+  <!-- Map style toggle -->
+  <div class="map-style-toggle">
+    <button class="map-style-btn active" id="styleDefault" onclick="setMapStyle('default')">Map</button>
+    <button class="map-style-btn" id="styleSatellite" onclick="setMapStyle('satellite')">Satellite</button>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="maps-sidebar" id="mapsSidebar">
+    <!-- Place detail view -->
+    <div id="placeView" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="sidebar-header">
+        <div>
+          <div class="sidebar-place-name" id="placeName"></div>
+          <div class="sidebar-place-addr" id="placeAddr"></div>
+        </div>
+        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+      </div>
+      <div class="sidebar-actions">
+        <button class="sidebar-action-btn" onclick="startDirectionsTo()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          Directions
+        </button>
+        <button class="sidebar-action-btn" onclick="copyCoords()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <button class="sidebar-action-btn" id="shareBtn" onclick="shareLocation()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+      </div>
+      <div class="sidebar-coords" id="placeCoords"></div>
+    </div>
+
+    <!-- Search results list -->
+    <div id="searchResultsView" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="sidebar-header">
+        <div>
+          <div class="sidebar-place-name" id="searchResultsTitle"></div>
+          <div class="sidebar-place-addr" id="searchResultsCount"></div>
+        </div>
+        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+      </div>
+      <div class="sidebar-results" id="sidebarResultsList"></div>
+    </div>
+
+    <!-- Directions panel -->
+    <div class="directions-panel" id="directionsPanel">
+      <div class="sidebar-header" style="justify-content:space-between">
+        <div class="sidebar-place-name">Directions</div>
+        <button class="sidebar-close" onclick="closeDirections()">✕</button>
+      </div>
+      <div class="directions-inputs">
+        <div class="directions-input-wrap">
+          <div class="directions-dot origin"></div>
+          <input type="text" id="directionsOrigin" class="directions-input" placeholder="Your location"/>
+        </div>
+        <div class="directions-input-wrap">
+          <div class="directions-dot dest"></div>
+          <input type="text" id="directionsDest" class="directions-input" placeholder="Destination"/>
+        </div>
+      </div>
+      <button class="directions-go-btn" onclick="getDirections()">Get Directions</button>
+      <div class="directions-result" id="directionsResult" style="display:none;">
+        <div class="directions-summary" id="directionsSummary"></div>
+      </div>
+      <div class="directions-steps" id="directionsSteps"></div>
+    </div>
+  </div>
+
+  <!-- Custom map controls -->
+  <div class="map-controls">
+    <button class="map-ctrl-btn" onclick="map.zoomIn()" title="Zoom in">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <button class="map-ctrl-btn" onclick="map.zoomOut()" title="Zoom out">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <button class="map-ctrl-btn" onclick="locateMe()" title="My location" id="locateBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+    </button>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="style.css" type="text/css"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="maps.js"></script>
+</body>
+</html>
