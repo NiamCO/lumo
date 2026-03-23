@@ -977,22 +977,33 @@ function openAnnounceModal() {
 
 async function sendAnnouncement() {
   const content = document.getElementById('announce-text').value.trim();
-  if (!content) { document.getElementById('announce-error').textContent = 'Enter announcement text.'; return; }
+  const errEl = document.getElementById('announce-error');
+  errEl.textContent = '';
+  if (!content) { errEl.textContent = 'Enter announcement text.'; return; }
 
-  // Insert as message with is_announcement=true in all active conversations
-  // Also insert into announcements table
-  await SB.from('announcements').insert({ content, created_by: currentUser.id });
+  // Insert into announcements table
+  const { error: annErr } = await SB.from('announcements').insert({ content, created_by: currentUser.id });
+  if (annErr) { errEl.textContent = 'Error: ' + annErr.message; return; }
 
-  // Send to current conversation if open
-  if (currentConvId) {
-    await SB.from('messages').insert({
-      conversation_id: currentConvId,
+  // Get all accepted conversation IDs for this user
+  const { data: memberships } = await SB.from('conversation_members')
+    .select('conversation_id')
+    .eq('user_id', currentUser.id)
+    .eq('status', 'accepted');
+
+  // Broadcast as announcement message to every conversation
+  if (memberships && memberships.length > 0) {
+    const msgs = memberships.map(m => ({
+      conversation_id: m.conversation_id,
       user_id: currentUser.id,
       content,
       is_announcement: true
-    });
+    }));
+    const { error: msgErr } = await SB.from('messages').insert(msgs);
+    if (msgErr) { errEl.textContent = 'Sent to announcements but failed to post messages: ' + msgErr.message; return; }
   }
 
+  document.getElementById('announce-text').value = '';
   closeModal('announce-modal');
 }
 
