@@ -137,6 +137,7 @@ async function handleSignOut() {
   await SB.auth.signOut();
   currentUser = null; currentProfile = null; currentConvId = null;
   conversations = []; messagesCache = {};
+  showAuth();
 }
 
 function showAuth() {
