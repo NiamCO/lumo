@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Selenite Games</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top bar ── */
+    .sg-bar {
+      height: 52px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--glass-border);
+      position: relative;
+      z-index: 10;
+    }
+
+    .sg-back {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .sg-back:hover { background: var(--glass-bg-hover); color: var(--text); }
+
+    .sg-wordmark {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    /* Crystal SVG logo */
+    .sg-crystal {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .sg-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #a78bfa, #818cf8, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+    }
+
+    .sg-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--glass-border);
+      flex-shrink: 0;
+    }
+
+    .sg-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .sg-spacer { flex: 1; }
+
+    .sg-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(167,139,250,0.15), rgba(96,165,250,0.12));
+      border: 1px solid rgba(167,139,250,0.25);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #a78bfa;
+      letter-spacing: 0.02em;
+    }
+    .sg-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #a78bfa;
+      animation: sgPulse 2s ease-in-out infinite;
+    }
+    @keyframes sgPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.75); }
+    }
+
+    .sg-fullscreen-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .sg-fullscreen-btn:hover { background: var(--glass-bg-hover); color: var(--text); }
+
+    /* ── iframe wrapper ── */
+    .sg-frame-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sg-iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Loading overlay */
+    .sg-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      background: var(--bg);
+      z-index: 5;
+      transition: opacity 0.4s ease;
+    }
+    .sg-loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sg-spinner {
+      position: relative;
+      width: 56px;
+      height: 56px;
+    }
+    .sg-spinner-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+      animation: sgSpin 1.4s linear infinite;
+    }
+    .sg-spinner-ring:nth-child(1) {
+      border-top-color: #a78bfa;
+      animation-duration: 1.4s;
+    }
+    .sg-spinner-ring:nth-child(2) {
+      inset: 8px;
+      border-top-color: #818cf8;
+      animation-duration: 1.0s;
+      animation-direction: reverse;
+    }
+    .sg-spinner-ring:nth-child(3) {
+      inset: 16px;
+      border-top-color: #60a5fa;
+      animation-duration: 0.7s;
+    }
+    @keyframes sgSpin { to { transform: rotate(360deg); } }
+
+    .sg-loading-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+    .sg-loading-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #a78bfa, #818cf8, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="noise"></div>
+
+  <!-- Top bar -->
+  <div class="sg-bar">
+    <a href="index.html" class="sg-back" title="Back to Lumo">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </a>
+
+    <div class="sg-wordmark">
+      <!-- Selenite crystal SVG logo -->
+      <svg class="sg-crystal" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="cg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#a78bfa"/>
+            <stop offset="100%" stop-color="#60a5fa"/>
+          </linearGradient>
+          <linearGradient id="cg2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#818cf8"/>
+            <stop offset="100%" stop-color="#a78bfa"/>
+          </linearGradient>
+        </defs>
+        <!-- Crystal gem shape -->
+        <polygon points="14,2 24,9 24,19 14,26 4,19 4,9" fill="url(#cg1)" opacity="0.2"/>
+        <polygon points="14,2 24,9 24,19 14,26 4,19 4,9" fill="none" stroke="url(#cg1)" stroke-width="1.5"/>
+        <!-- Inner facets -->
+        <line x1="14" y1="2" x2="14" y2="26" stroke="url(#cg2)" stroke-width="0.8" opacity="0.5"/>
+        <line x1="4" y1="9" x2="24" y2="19" stroke="url(#cg2)" stroke-width="0.8" opacity="0.4"/>
+        <line x1="24" y1="9" x2="4" y2="19" stroke="url(#cg2)" stroke-width="0.8" opacity="0.4"/>
+        <!-- Center sparkle -->
+        <circle cx="14" cy="14" r="2" fill="url(#cg1)" opacity="0.8"/>
+        <circle cx="14" cy="14" r="1" fill="white" opacity="0.9"/>
+      </svg>
+      <span class="sg-title">Selenite Games</span>
+    </div>
+
+    <div class="sg-divider"></div>
+    <span class="sg-subtitle">powered by lumo</span>
+
+    <div class="sg-spacer"></div>
+
+    <div class="sg-pill">
+      <div class="sg-pill-dot"></div>
+      Live
+    </div>
+
+    <button class="sg-fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">
+      <svg id="fs-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Game iframe -->
+  <div class="sg-frame-wrap">
+    <div class="sg-loading" id="sgLoading">
+      <div class="sg-loading-title">Selenite Games</div>
+      <div class="sg-spinner">
+        <div class="sg-spinner-ring"></div>
+        <div class="sg-spinner-ring"></div>
+        <div class="sg-spinner-ring"></div>
+      </div>
+      <div class="sg-loading-text">Loading games…</div>
+    </div>
+    <iframe
+      class="sg-iframe"
+      id="sgFrame"
+      src="https://67evann.jaytex.org/"
+      allowfullscreen
+      allow="fullscreen; autoplay; gamepad"
+      onload="frameLoaded()"
+    ></iframe>
+  </div>
+
+  <script>
+    // Theme
+    const saved = localStorage.getItem('lumo-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+
+    // Hide loading overlay when iframe loads
+    function frameLoaded() {
+      const loader = document.getElementById('sgLoading');
+      loader.classList.add('hidden');
+      setTimeout(() => loader.remove(), 500);
+    }
+
+    // Fallback: hide after 6s in case onload doesn't fire (cross-origin)
+    setTimeout(() => {
+      const loader = document.getElementById('sgLoading');
+      if (loader) { loader.classList.add('hidden'); setTimeout(() => loader.remove(), 500); }
+    }, 4000);
+
+    // Fullscreen toggle
+    let isFullscreen = false;
+    function toggleFullscreen() {
+      const bar = document.querySelector('.sg-bar');
+      const icon = document.getElementById('fs-icon');
+      isFullscreen = !isFullscreen;
+      bar.style.display = isFullscreen ? 'none' : 'flex';
+      icon.innerHTML = isFullscreen
+        ? '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>'
+        : '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+    }
+
+    // ESC to exit fullscreen
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && isFullscreen) toggleFullscreen();
+    });
+  </script>
+</body>
+</html>
