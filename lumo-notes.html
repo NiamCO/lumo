@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lumo Notes</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-family: var(--font-main); }
+
+    :root { --notes-1: #f59e0b; --notes-2: #fbbf24; --notes-glow: rgba(245,158,11,0.2); }
+
+    .notes-app { display: flex; height: 100vh; position: relative; z-index: 10; }
+
+    /* ── SIDEBAR ── */
+    .notes-sidebar {
+      width: 240px; flex-shrink: 0; display: flex; flex-direction: column;
+      border-right: 1px solid var(--glass-border);
+      background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur);
+    }
+    .sidebar-top {
+      padding: 12px 12px 8px; border-bottom: 1px solid var(--glass-border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .notes-logo {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--notes-1), var(--notes-2));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px var(--notes-glow);
+    }
+    .notes-logo svg { width: 15px; height: 15px; color: white; }
+    .notes-wordmark {
+      font-size: 1rem; font-weight: 700; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--notes-1), var(--notes-2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .sidebar-spacer { flex: 1; }
+    .sib { width: 28px; height: 28px; border-radius: 7px; border: none; background: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: background 0.15s, color 0.15s; }
+    .sib:hover { background: var(--glass-bg-hover); color: var(--text); }
+    .sib svg { width: 14px; height: 14px; }
+
+    /* Search */
+    .notes-search-wrap {
+      padding: 8px 10px; border-bottom: 1px solid var(--glass-border);
+    }
+    .notes-search {
+      display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      border-radius: 9px; transition: border-color 0.2s;
+    }
+    .notes-search:focus-within { border-color: rgba(245,158,11,0.35); }
+    .notes-search svg { width: 13px; height: 13px; color: var(--text-muted); flex-shrink: 0; }
+    #notesSearch { flex: 1; border: none; background: none; outline: none; font-family: var(--font-main); font-size: 0.82rem; color: var(--text); }
+    #notesSearch::placeholder { color: var(--text-muted); }
+
+    /* Folders */
+    .folders-section { padding: 6px 10px 2px; }
+    .folders-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; padding: 0 2px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+    .add-folder-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1rem; line-height: 1; padding: 0 2px; transition: color 0.15s; }
+    .add-folder-btn:hover { color: var(--notes-1); }
+
+    .folder-item {
+      display: flex; align-items: center; gap: 7px; padding: 6px 8px;
+      border-radius: 9px; cursor: pointer; font-size: 0.82rem; color: var(--text-muted);
+      transition: background 0.15s, color 0.15s; margin-bottom: 1px; position: relative;
+    }
+    .folder-item:hover { background: var(--glass-bg); color: var(--text); }
+    .folder-item.active { background: var(--glass-bg-hover); color: var(--notes-1); font-weight: 500; }
+    .folder-item svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .folder-count { margin-left: auto; font-size: 0.68rem; color: var(--text-muted); background: var(--glass-bg-strong); border-radius: 999px; padding: 1px 6px; }
+    .folder-del { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 0.7rem; display: none; }
+    .folder-item:hover .folder-del { display: block; }
+    .folder-item:hover .folder-count { display: none; }
+
+    /* Notes list */
+    .notes-list-wrap { flex: 1; overflow-y: auto; padding: 4px 10px; }
+    .notes-list-wrap::-webkit-scrollbar { width: 3px; }
+    .notes-list-wrap::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 99px; }
+
+    .note-item {
+      padding: 9px 10px; border-radius: 10px; cursor: pointer;
+      border: 1px solid transparent; margin-bottom: 3px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .note-item:hover { background: var(--glass-bg); }
+    .note-item.active { background: var(--glass-bg-hover); border-color: rgba(245,158,11,0.2); }
+    .note-item-title { font-size: 0.84rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+    .note-item.active .note-item-title { color: var(--notes-1); }
+    .note-item-preview { font-size: 0.74rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .note-item-date { font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; opacity: 0.6; }
+    .notes-empty-list { padding: 20px 8px; text-align: center; font-size: 0.82rem; color: var(--text-muted); opacity: 0.7; line-height: 1.6; }
+
+    /* New note btn */
+    .new-note-btn {
+      margin: 8px 10px; padding: 8px 12px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--notes-1), var(--notes-2));
+      border: none; color: white; font-family: var(--font-main);
+      font-size: 0.84rem; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 7px;
+      box-shadow: 0 2px 10px var(--notes-glow); transition: transform 0.15s;
+    }
+    .new-note-btn:hover { transform: translateY(-1px); }
+    .new-note-btn svg { width: 13px; height: 13px; }
+
+    /* Bottom */
+    .sidebar-bottom {
+      padding: 8px 10px; border-top: 1px solid var(--glass-border);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .notes-count-label { font-size: 0.75rem; color: var(--text-muted); flex: 1; }
+    .sb-back { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-muted); cursor: pointer; transition: background 0.15s; text-decoration: none; }
+    .sb-back:hover { background: var(--glass-bg-hover); }
+    .sb-back svg { width: 13px; height: 13px; }
+
+    /* ── EDITOR ── */
+    .notes-editor { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+    /* Toolbar */
+    .editor-toolbar {
+      height: 48px; flex-shrink: 0; padding: 0 20px;
+      display: flex; align-items: center; gap: 6px;
+      border-bottom: 1px solid var(--glass-border);
+      background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur);
+    }
+    .tb-sep { width: 1px; height: 18px; background: var(--glass-border); margin: 0 2px; }
+    .tb-btn {
+      height: 28px; padding: 0 8px; border-radius: 7px; border: none;
+      background: none; color: var(--text-muted); cursor: pointer;
+      font-family: var(--font-main); font-size: 0.82rem; font-weight: 500;
+      transition: background 0.15s, color 0.15s; display: flex; align-items: center; gap: 4px;
+    }
+    .tb-btn:hover { background: var(--glass-bg); color: var(--text); }
+    .tb-btn.active { background: rgba(245,158,11,0.12); color: var(--notes-1); }
+    .tb-btn svg { width: 13px; height: 13px; }
+    .tb-spacer { flex: 1; }
+    .save-indicator { font-size: 0.74rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+    .save-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+    .save-dot.unsaved { background: var(--notes-1); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .delete-note-btn {
+      height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--glass-border);
+      background: none; color: var(--text-muted); cursor: pointer;
+      font-family: var(--font-main); font-size: 0.8rem;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .delete-note-btn:hover { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.3); }
+
+    /* View toggle */
+    .view-toggle { display: flex; background: var(--glass-bg); border-radius: 8px; padding: 2px; border: 1px solid var(--glass-border); }
+    .vt-btn { padding: 4px 8px; border-radius: 6px; border: none; background: none; cursor: pointer; color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-main); font-weight: 500; transition: background 0.15s, color 0.15s; }
+    .vt-btn.active { background: var(--glass-bg-strong); color: var(--text); }
+
+    /* Editor body */
+    .editor-body { flex: 1; display: flex; min-height: 0; }
+
+    /* Write mode */
+    .editor-write { flex: 1; display: flex; flex-direction: column; padding: 24px 32px; overflow-y: auto; }
+    .editor-write::-webkit-scrollbar { width: 4px; }
+    .editor-write::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 99px; }
+
+    #noteTitle {
+      font-family: 'Lora', serif; font-size: 1.9rem; font-weight: 500;
+      color: var(--text); border: none; background: none; outline: none;
+      width: 100%; margin-bottom: 16px; letter-spacing: -0.02em; line-height: 1.2;
+      caret-color: var(--notes-1);
+    }
+    #noteTitle::placeholder { color: var(--text-muted); opacity: 0.5; }
+
+    #noteBody {
+      flex: 1; font-family: 'Lora', serif; font-size: 1rem; line-height: 1.8;
+      color: var(--text); border: none; background: none; outline: none;
+      resize: none; width: 100%; min-height: 400px;
+      caret-color: var(--notes-1);
+    }
+    #noteBody::placeholder { color: var(--text-muted); opacity: 0.4; }
+
+    /* Preview mode */
+    .editor-preview {
+      flex: 1; padding: 24px 32px; overflow-y: auto;
+      display: none; font-family: 'Lora', serif;
+    }
+    .editor-preview::-webkit-scrollbar { width: 4px; }
+    .editor-preview::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 99px; }
+    .editor-preview h1 { font-size: 2rem; font-weight: 500; margin: 0 0 16px; letter-spacing: -0.02em; font-family: 'Lora', serif; }
+    .editor-preview h2 { font-size: 1.4rem; font-weight: 500; margin: 20px 0 8px; font-family: 'Lora', serif; }
+    .editor-preview h3 { font-size: 1.15rem; font-weight: 600; margin: 16px 0 6px; font-family: var(--font-main); }
+    .editor-preview p { margin: 0 0 12px; line-height: 1.8; }
+    .editor-preview ul, .editor-preview ol { padding-left: 24px; margin: 0 0 12px; }
+    .editor-preview li { margin: 4px 0; line-height: 1.7; }
+    .editor-preview code { font-family: monospace; font-size: 0.88em; background: var(--glass-bg-strong); padding: 0.1em 0.4em; border-radius: 4px; border: 1px solid var(--glass-border); }
+    .editor-preview pre { background: #0d1117; border-radius: 10px; padding: 14px; margin: 12px 0; overflow-x: auto; }
+    .editor-preview pre code { background: none; border: none; color: #e6edf3; }
+    .editor-preview blockquote { border-left: 3px solid var(--notes-1); padding: 4px 0 4px 16px; color: var(--text-muted); margin: 12px 0; }
+    .editor-preview strong { font-weight: 700; }
+    .editor-preview em { font-style: italic; }
+    .editor-preview hr { border: none; border-top: 1px solid var(--glass-border); margin: 20px 0; }
+    .editor-preview a { color: var(--notes-1); text-decoration: underline; }
+
+    /* Empty state */
+    .editor-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px; color: var(--text-muted); text-align: center; padding: 40px;
+    }
+    .editor-empty svg { width: 48px; height: 48px; opacity: 0.2; }
+    .editor-empty h3 { font-size: 1.1rem; font-weight: 600; color: var(--text-muted); }
+    .editor-empty p { font-size: 0.85rem; max-width: 260px; line-height: 1.6; opacity: 0.7; }
+    .editor-empty-btn {
+      margin-top: 8px; padding: 9px 20px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--notes-1), var(--notes-2));
+      border: none; color: white; font-family: var(--font-main);
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+      box-shadow: 0 2px 10px var(--notes-glow); transition: transform 0.15s;
+    }
+    .editor-empty-btn:hover { transform: translateY(-1px); }
+
+    /* Folder modal */
+    .folder-modal { position: fixed; inset: 0; z-index: 300; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(6px); }
+    .folder-modal.open { display: flex; }
+    .folder-card { background: var(--bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 22px; width: 320px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: fadeUp 0.2s ease both; }
+    .folder-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+    .folder-card input { width: 100%; padding: 9px 12px; border-radius: 9px; border: 1px solid var(--glass-border); background: var(--glass-bg); font-family: var(--font-main); font-size: 0.88rem; color: var(--text); outline: none; }
+    .folder-card input:focus { border-color: var(--notes-1); }
+    .folder-card-btns { display: flex; gap: 8px; margin-top: 12px; }
+    .fc-save { flex: 1; padding: 9px; border-radius: 9px; border: none; background: linear-gradient(135deg, var(--notes-1), var(--notes-2)); color: white; font-family: var(--font-main); font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+    .fc-cancel { padding: 9px 14px; border-radius: 9px; border: 1px solid var(--glass-border); background: none; font-family: var(--font-main); font-size: 0.88rem; color: var(--text-muted); cursor: pointer; }
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+  <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div class="noise"></div>
+
+  <!-- Folder modal -->
+  <div class="folder-modal" id="folderModal">
+    <div class="folder-card">
+      <h3>New Folder</h3>
+      <input type="text" id="folderNameInput" placeholder="Folder name…"/>
+      <div class="folder-card-btns">
+        <button class="fc-cancel" onclick="closeFolderModal()">Cancel</button>
+        <button class="fc-save" onclick="createFolder()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes-app">
+    <!-- SIDEBAR -->
+    <aside class="notes-sidebar">
+      <div class="sidebar-top">
+        <div class="notes-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <span class="notes-wordmark">Notes</span>
+        <div class="sidebar-spacer"></div>
+        <button class="sib" onclick="toggleTheme()" title="Toggle theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+      </div>
+
+      <div class="notes-search-wrap">
+        <div class="notes-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="notesSearch" placeholder="Search notes…" oninput="renderNotesList()"/>
+        </div>
+      </div>
+
+      <div class="folders-section">
+        <div class="folders-label">
+          <span>Folders</span>
+          <button class="add-folder-btn" onclick="openFolderModal()" title="New folder">+</button>
+        </div>
+        <div id="foldersList"></div>
+      </div>
+
+      <div class="notes-list-wrap" id="notesListWrap"></div>
+
+      <button class="new-note-btn" onclick="newNote()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Note
+      </button>
+
+      <div class="sidebar-bottom">
+        <span class="notes-count-label" id="notesCountLabel">0 notes</span>
+        <a href="index.html" class="sb-back" title="Back to Lumo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <!-- EDITOR -->
+    <div class="notes-editor">
+      <!-- Toolbar -->
+      <div class="editor-toolbar" id="editorToolbar" style="display:none">
+        <button class="tb-btn" onclick="fmt('bold')" title="Bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg></button>
+        <button class="tb-btn" onclick="fmt('italic')" title="Italic" style="font-style:italic;font-family:'Lora',serif">I</button>
+        <button class="tb-btn" onclick="insertText('# ')" title="H1" style="font-weight:700">H1</button>
+        <button class="tb-btn" onclick="insertText('## ')" title="H2" style="font-weight:600">H2</button>
+        <button class="tb-btn" onclick="insertText('### ')" title="H3" style="font-weight:500">H3</button>
+        <div class="tb-sep"></div>
+        <button class="tb-btn" onclick="insertText('- ')" title="Bullet list">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+        <button class="tb-btn" onclick="insertText('- [ ] ')" title="Checklist">☑</button>
+        <button class="tb-btn" onclick="insertText('> ')" title="Quote">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+        </button>
+        <button class="tb-btn" onclick="insertCode()" title="Code block">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </button>
+        <div class="tb-sep"></div>
+        <!-- Move to folder -->
+        <select id="folderSelect" onchange="moveNoteToFolder(this.value)" style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:7px;padding:3px 8px;font-family:var(--font-main);font-size:0.78rem;color:var(--text-muted);cursor:pointer;outline:none"></select>
+        <div class="tb-spacer"></div>
+        <div class="save-indicator"><div class="save-dot" id="saveDot"></div><span id="saveLabel">Saved</span></div>
+        <div class="tb-sep"></div>
+        <div class="view-toggle">
+          <button class="vt-btn active" id="vt-write" onclick="setView('write')">Write</button>
+          <button class="vt-btn" id="vt-preview" onclick="setView('preview')">Preview</button>
+        </div>
+        <div class="tb-sep"></div>
+        <button class="delete-note-btn" onclick="deleteCurrentNote()">Delete</button>
+      </div>
+
+      <div class="editor-body">
+        <!-- Empty state -->
+        <div class="editor-empty" id="editorEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <h3>No note selected</h3>
+          <p>Create a new note or pick one from the sidebar.</p>
+          <button class="editor-empty-btn" onclick="newNote()">+ New Note</button>
+        </div>
+
+        <!-- Write mode -->
+        <div class="editor-write" id="editorWrite" style="display:none">
+          <input type="text" id="noteTitle" placeholder="Note title…" oninput="markUnsaved()"/>
+          <textarea id="noteBody" placeholder="Start writing… (Markdown supported)&#10;&#10;# Heading&#10;**bold**, *italic*, `code`&#10;- bullet list&#10;- [ ] checkbox" oninput="markUnsaved(); autoGrow(this)"></textarea>
+        </div>
+
+        <!-- Preview mode -->
+        <div class="editor-preview" id="editorPreview"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Theme ─────────────────────────────────────────────
+    (function(){
+      const s=localStorage.getItem('lumo-theme');
+      const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+      document.documentElement.setAttribute('data-theme',s||(dark?'dark':'light'));
+    })();
+    function toggleTheme(){
+      const c=document.documentElement.getAttribute('data-theme');
+      const n=c==='dark'?'light':'dark';
+      document.documentElement.setAttribute('data-theme',n);
+      localStorage.setItem('lumo-theme',n);
+    }
+
+    // ── Data ──────────────────────────────────────────────
+    const STORE = 'lumo-notes-data';
+    function getData(){ try{ return JSON.parse(localStorage.getItem(STORE)||'null')||{notes:[],folders:[]}; } catch{ return {notes:[],folders:[]}; } }
+    function saveData(d){ localStorage.setItem(STORE,JSON.stringify(d)); }
+
+    let currentNoteId = null;
+    let currentFolderId = 'all';
+    let saveTimer = null;
+    let isUnsaved = false;
+    let currentView = 'write';
+
+    // ── Folders ───────────────────────────────────────────
+    function renderFolders(){
+      const d = getData();
+      const el = document.getElementById('foldersList');
+      const allCount = d.notes.length;
+
+      const builtIn = [
+        { id:'all', name:'All Notes', icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`, count:allCount },
+        { id:'uncat', name:'Uncategorised', icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`, count: d.notes.filter(n=>!n.folderId).length },
+      ];
+
+      el.innerHTML = builtIn.map(f=>`
+        <div class="folder-item ${currentFolderId===f.id?'active':''}" onclick="setFolder('${f.id}')">
+          ${f.icon}<span style="flex:1">${f.name}</span>
+          <span class="folder-count">${f.count}</span>
+        </div>`).join('') +
+        d.folders.map(f=>`
+          <div class="folder-item ${currentFolderId===f.id?'active':''}" onclick="setFolder('${f.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span style="flex:1">${escHtml(f.name)}</span>
+            <span class="folder-count">${d.notes.filter(n=>n.folderId===f.id).length}</span>
+            <button class="folder-del" onclick="deleteFolder('${f.id}',event)">✕</button>
+          </div>`).join('');
+
+      // Update folder select in toolbar
+      const sel = document.getElementById('folderSelect');
+      sel.innerHTML = `<option value="">📁 Move to folder</option><option value="uncat">Uncategorised</option>` +
+        d.folders.map(f=>`<option value="${f.id}">${escHtml(f.name)}</option>`).join('');
+    }
+
+    function setFolder(id){
+      currentFolderId = id;
+      renderFolders();
+      renderNotesList();
+    }
+
+    function openFolderModal(){
+      document.getElementById('folderModal').classList.add('open');
+      document.getElementById('folderNameInput').value='';
+      setTimeout(()=>document.getElementById('folderNameInput').focus(),80);
+    }
+    function closeFolderModal(){ document.getElementById('folderModal').classList.remove('open'); }
+    function createFolder(){
+      const name = document.getElementById('folderNameInput').value.trim();
+      if(!name) return;
+      const d = getData();
+      d.folders.push({ id:'folder_'+Date.now(), name });
+      saveData(d);
+      closeFolderModal();
+      renderFolders();
+    }
+    function deleteFolder(id, e){
+      e.stopPropagation();
+      const d = getData();
+      d.notes.forEach(n=>{ if(n.folderId===id) n.folderId=null; });
+      d.folders = d.folders.filter(f=>f.id!==id);
+      saveData(d);
+      if(currentFolderId===id) currentFolderId='all';
+      renderFolders(); renderNotesList();
+    }
+
+    document.getElementById('folderModal').addEventListener('click',e=>{ if(e.target===document.getElementById('folderModal')) closeFolderModal(); });
+    document.getElementById('folderNameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') createFolder(); });
+
+    // ── Notes list ────────────────────────────────────────
+    function getFilteredNotes(){
+      const d = getData();
+      const q = document.getElementById('notesSearch').value.toLowerCase();
+      return d.notes.filter(n=>{
+        if(currentFolderId==='uncat' && n.folderId) return false;
+        if(currentFolderId!=='all' && currentFolderId!=='uncat' && n.folderId!==currentFolderId) return false;
+        if(q && !n.title.toLowerCase().includes(q) && !(n.body||'').toLowerCase().includes(q)) return false;
+        return true;
+      }).sort((a,b)=>b.updatedAt-a.updatedAt);
+    }
+
+    function renderNotesList(){
+      const notes = getFilteredNotes();
+      const wrap = document.getElementById('notesListWrap');
+      const countEl = document.getElementById('notesCountLabel');
+      const total = getData().notes.length;
+      countEl.textContent = `${total} note${total!==1?'s':''}`;
+
+      if(!notes.length){
+        wrap.innerHTML='<div class="notes-empty-list">No notes here.<br/>Create one with the button below!</div>';
+        return;
+      }
+      wrap.innerHTML = notes.map(n=>`
+        <div class="note-item ${n.id===currentNoteId?'active':''}" onclick="openNote('${n.id}')">
+          <div class="note-item-title">${escHtml(n.title||'Untitled')}</div>
+          <div class="note-item-preview">${escHtml((n.body||'').slice(0,60))}</div>
+          <div class="note-item-date">${timeAgo(n.updatedAt)}</div>
+        </div>`).join('');
+    }
+
+    // ── Note CRUD ─────────────────────────────────────────
+    function newNote(){
+      const d = getData();
+      const id = 'note_'+Date.now();
+      const note = { id, title:'', body:'', folderId: currentFolderId==='all'||currentFolderId==='uncat'?null:currentFolderId, createdAt:Date.now(), updatedAt:Date.now() };
+      d.notes.unshift(note);
+      saveData(d);
+      openNote(id);
+      renderNotesList();
+      renderFolders();
+    }
+
+    function openNote(id){
+      saveCurrentNote(); // save previous before switching
+      const d = getData();
+      const note = d.notes.find(n=>n.id===id);
+      if(!note) return;
+      currentNoteId = id;
+
+      document.getElementById('editorEmpty').style.display = 'none';
+      document.getElementById('editorToolbar').style.display = 'flex';
+      document.getElementById('editorWrite').style.display = 'flex';
+      document.getElementById('noteTitle').value = note.title||'';
+      document.getElementById('noteBody').value = note.body||'';
+      autoGrow(document.getElementById('noteBody'));
+      setView('write');
+      markSaved();
+      renderNotesList();
+
+      // Set folder select
+      const sel = document.getElementById('folderSelect');
+      sel.value = note.folderId||'';
+    }
+
+    function saveCurrentNote(force=false){
+      if(!currentNoteId) return;
+      const d = getData();
+      const idx = d.notes.findIndex(n=>n.id===currentNoteId);
+      if(idx===-1) return;
+      const title = document.getElementById('noteTitle').value;
+      const body = document.getElementById('noteBody').value;
+      d.notes[idx].title = title;
+      d.notes[idx].body = body;
+      d.notes[idx].updatedAt = Date.now();
+      saveData(d);
+      if(force||isUnsaved){ markSaved(); renderNotesList(); }
+    }
+
+    function deleteCurrentNote(){
+      if(!currentNoteId) return;
+      if(!confirm('Delete this note? This cannot be undone.')) return;
+      const d = getData();
+      d.notes = d.notes.filter(n=>n.id!==currentNoteId);
+      saveData(d);
+      currentNoteId = null;
+      document.getElementById('editorEmpty').style.display='flex';
+      document.getElementById('editorToolbar').style.display='none';
+      document.getElementById('editorWrite').style.display='none';
+      document.getElementById('editorPreview').style.display='none';
+      renderNotesList(); renderFolders();
+    }
+
+    function moveNoteToFolder(folderId){
+      if(!currentNoteId) return;
+      const d = getData();
+      const idx = d.notes.findIndex(n=>n.id===currentNoteId);
+      if(idx===-1) return;
+      d.notes[idx].folderId = folderId||null;
+      saveData(d);
+      renderNotesList(); renderFolders();
+    }
+
+    // ── Autosave ──────────────────────────────────────────
+    function markUnsaved(){
+      isUnsaved = true;
+      document.getElementById('saveDot').classList.add('unsaved');
+      document.getElementById('saveLabel').textContent = 'Unsaved';
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(()=>saveCurrentNote(true), 800);
+    }
+    function markSaved(){
+      isUnsaved = false;
+      document.getElementById('saveDot').classList.remove('unsaved');
+      document.getElementById('saveLabel').textContent = 'Saved';
+    }
+
+    // ── View toggle ───────────────────────────────────────
+    function setView(v){
+      currentView = v;
+      document.getElementById('vt-write').classList.toggle('active', v==='write');
+      document.getElementById('vt-preview').classList.toggle('active', v==='preview');
+      document.getElementById('editorWrite').style.display = v==='write'?'flex':'none';
+      const prev = document.getElementById('editorPreview');
+      if(v==='preview'){
+        prev.style.display='block';
+        const title = document.getElementById('noteTitle').value;
+        const body = document.getElementById('noteBody').value;
+        prev.innerHTML = renderMarkdown((title?`# ${title}\n\n`:'')+body);
+      } else {
+        prev.style.display='none';
+      }
+    }
+
+    // ── Markdown ──────────────────────────────────────────
+    function renderMarkdown(md){
+      let h = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      // Code blocks
+      h = h.replace(/```(\w*)\n?([\s\S]*?)```/g,(_,lang,code)=>`<pre><code class="language-${lang}">${code.trim()}</code></pre>`);
+      // Inline code
+      h = h.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+      // Headers
+      h = h.replace(/^#### (.+)/gm,'<h4>$1</h4>');
+      h = h.replace(/^### (.+)/gm,'<h3>$1</h3>');
+      h = h.replace(/^## (.+)/gm,'<h2>$1</h2>');
+      h = h.replace(/^# (.+)/gm,'<h1>$1</h1>');
+      // Bold/Italic
+      h = h.replace(/\*\*(.*?)\*\*/gs,'<strong>$1</strong>');
+      h = h.replace(/__(.*?)__/gs,'<strong>$1</strong>');
+      h = h.replace(/\*(.*?)\*/g,'<em>$1</em>');
+      h = h.replace(/_(.*?)_/g,'<em>$1</em>');
+      // Blockquote
+      h = h.replace(/^&gt; (.+)/gm,'<blockquote>$1</blockquote>');
+      // HR
+      h = h.replace(/^---+$/gm,'<hr>');
+      // Checkboxes
+      h = h.replace(/^- \[x\] (.+)/gm,'<li><input type="checkbox" checked disabled> $1</li>');
+      h = h.replace(/^- \[ \] (.+)/gm,'<li><input type="checkbox" disabled> $1</li>');
+      // Bullets
+      h = h.replace(/^- (.+)/gm,'<li>$1</li>');
+      h = h.replace(/^(\d+)\. (.+)/gm,'<li>$2</li>');
+      // Wrap lists
+      h = h.replace(/(<li>[\s\S]*?<\/li>\n?)+/g,s=>`<ul>${s}</ul>`);
+      // Links
+      h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+      // Paragraphs
+      h = h.replace(/\n\n/g,'</p><p>');
+      h = h.replace(/\n/g,'<br>');
+      return `<p>${h}</p>`;
+    }
+
+    // ── Formatting helpers ────────────────────────────────
+    function fmt(type){
+      const ta = document.getElementById('noteBody');
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      const sel = ta.value.slice(s,e);
+      const map = { bold:`**${sel||'bold text'}**`, italic:`*${sel||'italic text'}*` };
+      const rep = map[type];
+      if(!rep) return;
+      ta.value = ta.value.slice(0,s)+rep+ta.value.slice(e);
+      ta.selectionStart = s+2; ta.selectionEnd = s+rep.length-(sel?2:2);
+      ta.focus(); markUnsaved();
+    }
+
+    function insertText(prefix){
+      const ta = document.getElementById('noteBody');
+      const s = ta.selectionStart;
+      // Go to start of line
+      const before = ta.value.slice(0,s);
+      const lineStart = before.lastIndexOf('\n')+1;
+      ta.value = ta.value.slice(0,lineStart)+prefix+ta.value.slice(lineStart);
+      ta.selectionStart = ta.selectionEnd = lineStart+prefix.length;
+      ta.focus(); markUnsaved();
+    }
+
+    function insertCode(){
+      const ta = document.getElementById('noteBody');
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      const sel = ta.value.slice(s,e);
+      const ins = sel ? `\`\`\`\n${sel}\n\`\`\`` : '```\ncode here\n```';
+      ta.value = ta.value.slice(0,s)+ins+ta.value.slice(e);
+      ta.focus(); markUnsaved();
+    }
+
+    function autoGrow(el){
+      el.style.height='auto';
+      el.style.height=el.scrollHeight+'px';
+    }
+
+    // ── Utils ─────────────────────────────────────────────
+    function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function timeAgo(ts){
+      const diff=(Date.now()-ts)/1000;
+      if(diff<60) return 'Just now';
+      if(diff<3600) return Math.floor(diff/60)+'m ago';
+      if(diff<86400) return Math.floor(diff/3600)+'h ago';
+      if(diff<604800) return Math.floor(diff/86400)+'d ago';
+      return new Date(ts).toLocaleDateString();
+    }
+
+    // ── Keyboard shortcuts ────────────────────────────────
+    document.addEventListener('keydown',e=>{
+      if((e.metaKey||e.ctrlKey)&&e.key==='s'){ e.preventDefault(); saveCurrentNote(true); }
+      if((e.metaKey||e.ctrlKey)&&e.key==='n'){ e.preventDefault(); newNote(); }
+      if((e.metaKey||e.ctrlKey)&&e.key==='p'){ e.preventDefault(); setView(currentView==='write'?'preview':'write'); }
+    });
+
+    // ── Init ──────────────────────────────────────────────
+    renderFolders();
+    renderNotesList();
+  </script>
+</body>
+</html>
