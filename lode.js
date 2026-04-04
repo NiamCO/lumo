@@ -477,11 +477,44 @@ async function sendMessage() {
 
     hideTyping();
 
-    const outputs = data.outputs || data.messages || [];
-    const reply = outputs.filter(m => m.role === 'assistant').pop()?.content
-      || data.content
-      || data.choices?.[0]?.message?.content
-      || 'Sorry, no response received. Check your API key.';
+    // Log raw response so we can debug if needed
+    console.log('Lode API response:', JSON.stringify(data));
+
+    // Mistral conversations beta returns outputs[] with type/content
+    // Each output may be { role, content } or { type: 'message', content: [{type:'text',text:'...'}] }
+    let reply = null;
+
+    // Try outputs array first (beta conversations endpoint)
+    if (data.outputs && Array.isArray(data.outputs)) {
+      for (const o of [...data.outputs].reverse()) {
+        if (o.role === 'assistant' || o.type === 'message') {
+          if (typeof o.content === 'string') { reply = o.content; break; }
+          if (Array.isArray(o.content)) {
+            const txt = o.content.find(c => c.type === 'text');
+            if (txt?.text) { reply = txt.text; break; }
+          }
+        }
+      }
+    }
+
+    // Fallback: messages array
+    if (!reply && data.messages && Array.isArray(data.messages)) {
+      for (const m of [...data.messages].reverse()) {
+        if (m.role === 'assistant') {
+          if (typeof m.content === 'string') { reply = m.content; break; }
+          if (Array.isArray(m.content)) {
+            const txt = m.content.find(c => c.type === 'text');
+            if (txt?.text) { reply = txt.text; break; }
+          }
+        }
+      }
+    }
+
+    // Other fallbacks
+    if (!reply) reply = data.content || data.choices?.[0]?.message?.content;
+
+    // If still nothing, show the raw data so we can debug
+    if (!reply) reply = 'No response text found. Raw: ' + JSON.stringify(data).slice(0, 300);
 
     addMessage('ai', reply);
 
