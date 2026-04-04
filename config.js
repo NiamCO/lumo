@@ -10,7 +10,7 @@ const LUMO_CONFIG = {
   // Mistral API key — get one free at https://console.mistral.ai
   MISTRAL_API_KEY: "NCw25EMGj2ga3WzGuudpclYhS4SMLA5a",
 
-  ANTHROPIC_API_KEY: "YOUR_ANTHROPIC_API_KEY_HERE",
+  ANTHROPIC_API_KEY: "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",
 
   SUPABASE_URL: "https://urcwukegybnaeirdvhhy.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyY3d1a2VneWJuYWVpcmR2aGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMzE2NDcsImV4cCI6MjA4OTgwNzY0N30.3zseU5_c_2pbXrFULj_yA81wP8KEWgzNYJjjgZwMy0M",
