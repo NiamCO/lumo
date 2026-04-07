@@ -509,9 +509,12 @@ function renderMsgEl(msg, reactions, grouped) {
 
   const time = formatTime(msg.created_at);
 
+  // Format content: escape HTML then convert newlines to <br>
+  const formattedContent = escHtml(msg.content).replace(/\n/g, '<br>');
+
   row.innerHTML = `
     ${avatarHtml}
-    <div>
+    <div style="display:flex;flex-direction:column;align-items:${isOut?'flex-end':'flex-start'};max-width:72%;min-width:0">
       ${!grouped && !isOut ? `<div class="msg-sender">${senderName}</div>` : ''}
       <div class="msg-bubble-wrap">
         <div class="msg-actions">
@@ -527,7 +530,7 @@ function renderMsgEl(msg, reactions, grouped) {
         </div>
         <div class="msg-bubble">
           ${replyHtml}
-          ${escHtml(msg.content)}
+          ${formattedContent}
         </div>
         ${reactHtml}
         <div class="msg-time">${time}</div>
@@ -557,11 +560,14 @@ function renderAnnouncementEl(msg) {
 // ============================================================
 //  SEND MESSAGE
 // ============================================================
+let isSending = false;
+
 async function sendMessage() {
   const input = document.getElementById('msg-input');
   const content = input.value.trim();
-  if (!content || !currentConvId) return;
+  if (!content || !currentConvId || isSending) return;
 
+  isSending = true;
   input.value = '';
   autoResizeTextarea(input);
 
@@ -576,13 +582,27 @@ async function sendMessage() {
   clearReply();
   clearTypingIndicator();
 
-  const { error } = await SB.from('messages').insert(msgData);
-  if (error) console.error('Send error:', error);
-
-  // Clear typing
-  await SB.from('typing_indicators').delete()
-    .eq('conversation_id', currentConvId)
-    .eq('user_id', currentUser.id);
+  try {
+    const { error } = await SB.from('messages').insert(msgData);
+    if (error) {
+      console.error('Send error:', error);
+      // Put content back if send failed
+      input.value = content;
+      autoResizeTextarea(input);
+    } else {
+      // Optimistically re-render in case realtime is slow
+      await loadMessages(currentConvId);
+    }
+  } catch(e) {
+    console.error('Send exception:', e);
+    input.value = content;
+  } finally {
+    isSending = false;
+    // Clear typing
+    SB.from('typing_indicators').delete()
+      .eq('conversation_id', currentConvId)
+      .eq('user_id', currentUser.id);
+  }
 }
 
 function handleMsgKeydown(e) {
